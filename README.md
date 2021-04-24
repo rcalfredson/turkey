@@ -19,7 +19,11 @@ Please note that **turkey is only fully tested on Chrome**. Development is still
 
 ## Configuring Amazon Turk to use turkey
 
-Copy the contents of `Mturk.html` into the source code section when you create a custom HIT in the Amazon Turk Requester. After the HIT is created, simply **Publish Batch** with a CSV file of both image URIs and annotation modes that you provide. Optionally, you can also import previous annotations by putting the correctly formatted json string into column "annotations". Please note that the `annotations` column is meant to be JSON string, but to get around CSV formatting, we use `;` instead of `,` and single quote `'` instead of double quote `"`. This can be programmtically processed to be normal JSON in pre/post-processing. A sample CSV file may look like:
+- Create a custom HIT in the Amazon Turk Requester
+- Copy the contents of `Mturk.html` into the source code section
+- After the HIT is created, simply **Publish Batch** with a CSV file of both image URIs and annotation modes that you provide. 
+  - Optionally, you can also import previous annotations by putting the correctly formatted json string into column "annotations". 
+  - Please note that the `annotations` column is meant to be JSON string, but to get around CSV formatting, we use `;` instead of `,` and single quote `'` instead of double quote `"`. This can be programmtically processed to be normal JSON in pre/post-processing. A sample CSV file may look like:
 
 ```
 img_url,annotation_mode,classes,annotations
