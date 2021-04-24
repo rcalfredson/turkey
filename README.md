@@ -19,7 +19,7 @@ Please note that **turkey is only fully tested on Chrome**. Development is still
 
 ## Configuring Amazon Turk to use turkey
 
-Copy the contents of `Mturk.html` into the source code section when you create a custom HIT in the Amazon Turk Requester. After the HIT is created, simply **Publish Batch** with a CSV file of both image URIs and annotation modes that you provide. A sample CSV file may look like:
+Copy the contents of `Mturk.html` into the source code section when you create a custom HIT in the Amazon Turk Requester. After the HIT is created, simply **Publish Batch** with a CSV file of both image URIs and annotation modes that you provide. Optionally, you can also import previous annotations by putting the correctly formatted json string into column "annotations". Please note that the `annotations` column is meant to be JSON string, but to get around CSV formatting, we use `;` instead of `,` and single quote `'` instead of double quote `"`. This can be programmtically processed to be normal JSON in pre/post-processing. A sample CSV file may look like:
 
 ```
 img_url,annotation_mode,classes,annotations
@@ -28,16 +28,14 @@ https://i.imgur.com/2yOma1u.jpg,polygon,cat-person-sky-food,"[{'class':'cat';'mo
 https://i.imgur.com/5PiDyYf.jpeg,bbox-polygon,house-ground
 ```
 
-The first item in the `annotation_mode` and `classes` will be used as default option. Optionally, you can also import previous annotations by putting the correctly formatted json string into column "annotations".
+The first item in the `annotation_mode` and `classes` will be used as default option. 
 
 Here, for each image, we treat it differently. 
 - For the first image, we allow 4 annotation modes, 3 class labels, and import previous annotations; 
 - For the second image, we allow 1 annotation mode (polygon), 4 class labels, and import previous annotations; 
 - For the third image, we allow 2 annotation modes, 2 class labels, and start fresh with no previous annotation.
 
-Alternatively, we can also treat a batch of images with the same settings by copy-pasting the `annotation_mode` and `classes` columns programmatically (or by hand if it is practical).
-
-Please note that the `annotations` column is meant to be JSON string, but to get around CSV formatting, we use `;` instead of `,` and single quote instead of double quote. This can be programmtically processed to be normal JSON in pre/post-processing.
+Alternatively, we can also treat a batch of images with the same settings by copy-pasting the `annotation_mode` and `classes` columns programmatically (or by hand if it is practical). The choice is yours!
 
 ## Testing without Turk
 You can test the code before deploying it on MTurk by opening `localDemo.html` in your browser. This file is a lightweight wrapper that will load `MTurk.html` off GitHub, passing a sample image to it in the process. If you don't see anything here, make sure to start Chrome with the `--allow-file-access-from-files` flag (or the equivalent configuration for the browser of your choice). This will allow this wrapper page to load MTurk.html.
