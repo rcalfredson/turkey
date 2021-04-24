@@ -15,7 +15,7 @@ Authors:
 
 I'm aware that Amazon has recently released their own image segmentation tool. The advantage is that their tool is encapsulated into their internal API, which we have no direct access to. That means if you want to change something or add something that was not included in the official example, you would have to write a new tool from scratch. **turkey** is written in plain JavaScript, with a little help from jQuery and bootstrap. Feel free to adapt it to your needs.
 
-Please note that **turkey only works on Chrome**. Development is still in progress. Ideas and suggestions are welcome!
+Please note that **turkey is only fully tested on Chrome**. Development is still in progress. Ideas and suggestions are welcome!
 
 ## Configuring Amazon Turk to use turkey
 
