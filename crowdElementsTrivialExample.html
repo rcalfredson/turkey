@@ -1,0 +1,226 @@
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<script type="text/javascript">
+    document.getElementById('submitButton').onclick = function () {
+        document.getElementById('annotations').value = JSON.stringify({ testKey: 'testval' });
+        document.getElementById('hiddenSubmit').click();
+    }
+</script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+    integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<link crossorigin="anonymous" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css"
+    integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" rel="stylesheet" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<style>
+    #editorOuter {
+        width: 1000px;
+        height: auto;
+        overflow: hidden;
+        position: relative;
+        background: #f5f5f5;
+    }
+
+    #editorInner {
+        margin: auto;
+    }
+
+    #myCanvas {
+        position: absolute;
+    }
+
+    #pic {
+        width: 100%;
+        height: auto;
+    }
+
+    #text {
+        width: 1000px;
+    }
+
+    .btn:hover {
+        text-shadow: 0px 0px 1px black;
+    }
+
+    .fixed_width {
+        width: 130px !important;
+    }
+
+    #class {
+        width: 200px;
+        float: right;
+    }
+
+    #text {
+        margin-bottom: 20px;
+    }
+
+    #buttons {
+        margin-top: 20px;
+    }
+</style>
+<div id="text" style="display:inline-block;vertical-align:top;padding-left: 15px;padding-top: 15px;">
+    <button id="title" type="button" class="btn btn-outline-primary btn-lg">Instructions</button>
+    <select id="class" class="form-control"></select>
+    <div id="instruction">
+        <br>
+        Please draw a segmentation mask over each individual egg in the image. Eggs are typically dark, oblong, and have
+        antennae; however, sometimes they may also be lighter and more irregularly shaped.
+        <br><br>
+        <h5>How to identify eggs</h5>
+        <span style="color: #0ba133">
+            <strong>Good example</strong><br>
+        </span> Each egg is labelled to its outer edge, excluding antennae. Individual eggs are accurately labelled even
+        in the dense regions.
+        <br>
+        <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/goodLabelsExampleMechTurk.jpg">
+        <br><br> Sometimes the eggs are dimmer, such as the one at the bottom of this image, but they should still be
+        counted.
+        <br>
+        <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/dimEggExample.jpg">
+        <br><br>
+        <span style="color: #a11a0b">
+            <strong>Bad example</strong><br>
+        </span> In this example, the labelling problems are as follows:
+        <ol>
+            <li>Some eggs are not labelled.</li>
+            <li>Large dark regions are labelled even though they are not eggs.</li>
+            <li>Some labels span multiple eggs.</li>
+            <li>Labels do not align well with the borders of the eggs, and have irregular shapes instead of the expected
+                oval.</li>
+        </ol>
+        <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/badExamples.jpg">
+        <br><br>
+        <h5>How to use the tool</h5>
+        <ul>
+            <li>Hold <strong>right click</strong> to drag the image.</li>
+            <li><strong>Left click</strong> to annotate the image using up to three modes:</li>
+            <ul>
+                <li><strong>Dot mode</strong> indicates the location of the object with one left click. </li>
+                <li><strong>Link mode</strong> indicates head (1st click) and tail (2nd click).</li>
+                <li><strong>Polygon mode</strong> draws the segmentation mask of the object.</li>
+                <li><strong>Bbox mode</strong> draws the bounding box of the object by holding down left click. </li>
+            </ul>
+            <li>The <strong>Mode toggle</strong> button indicates the current mode</li>
+            <li>Press <strong>CTRL+Z</strong> or click the <strong>Undo</strong> button to undo last
+                deletion/annotation.</li>
+            <li>Press <strong>C</strong> to close polygon in polygon mode.</li>
+            <li>Click <strong>Delete/Annotate</strong> flip switch or press <strong>D</strong> to toggle between
+                deleting and annotating.</li>
+            <li>Click the <strong>Undo</strong> button to undo your last deletion/annotation depending on your current
+                mode.</li>
+            <li>Click the <strong>Reset</strong> button to clear all annotations.</li>
+            <li>Click the <strong>Reposition</strong> button to center the image and reset zoom.</li>
+            <li>Click the <strong>Submit</strong> button to finish current task.</li>
+        </ul>
+    </div>
+
+    <p id="buttons">
+        <input class="btn btn-info fixed_width" id="mode_button" type="button" value="Dot Mode" />
+        <span id="delete_flip" , class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-outline-secondary disabled" type="radio" name="options" id="delete_button"
+                autocomplete="off" checked> Delete </label>
+            <label class="btn btn-primary" type="radio" name="options" id="annotate_button" autocomplete="off">
+                Annotate </label>
+        </span>
+        <input class="btn btn-secondary" id="undo_button" type="button" value="Undo" />
+        <input class="btn btn-danger" id="reset_button" type="button" value="Reset" />
+        <input class="btn btn-warning" id="reposition_button" type="button" value="Reposition" />
+        <crowd-button class="btn btn-success" id="submitButton">Submit</crowd-button>
+    </p>
+
+    <p>
+        <label for="transparency">Transparency percentage</label>
+        <input type="range" min="0" max="100" class="range-field my-4 w-25" id="transparency_slider">
+    </p>
+
+    <div>
+        <!-- Coordinates input from user -->
+        <input id="coordinates" name="coordinates" type="hidden" />
+    </div>
+</div>
+<div id="editorOuter" style="margin-left: 15px;">
+    <div id="editorInner">
+        <canvas id="myCanvas">
+        </canvas>
+        <img id="pic" src="{{ task.input.taskObject | grant_read_access }}" />
+    </div>
+</div>
+
+<script id="turkey" type="text/javascript">
+    var translateX, translateY, correctX, correctY;
+    var anchorX, anchorY, dragX, dragY, mouseX, mouseY;
+    var dragged, dragStart, delta, scaleRatio, scaleDiff;
+    var myChild, myParent, canvas, ctx, img;
+    var annotations, modes, classSelection;
+    var transparency_level = 0.5;
+    var dragOffsetX = 0;
+    var dragOffsetY = 0;
+    var scalingOffsetX = 0;
+    var scalingOffsetY = 0;
+    var oldScale = 1.0;
+    var newScale = 1.0;
+    var firstPoint = true;
+    var mode = "";
+    var modeNum = 0;
+    var dotSize = 4;
+    var scaleTransform = 1;
+    var translateTransform = [0, 0];
+    var translateTransform_raw = [0, 0];
+    var delete_mode = false;
+    var delete_idx = -1;
+    var trashcan = new Array();
+    var colors = {};
+    var timeDownUp = null;
+    var rightClick = false;
+
+    var currentLink = { 'class': [], 'mode': 'link', 'data': [] };
+    var currentPolygon = { 'class': [], 'mode': 'polygon', 'data': [] };
+    var currentBbox = { 'class': [], 'mode': 'bbox', 'data': [] };
+    String.prototype.hashCode = function () {
+        var hash = 0;
+        if (this.length == 0) {
+            return hash;
+        }
+        for (var i = 0; i < this.length; i++) {
+            var char = this.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return hash;
+    }
+
+    var start = function () {
+        myParent = document.getElementById("editorOuter");
+        myChild = document.getElementById("editorInner");
+        canvas = document.getElementById("myCanvas");
+        ctx = canvas.getContext("2d");
+        img = document.getElementById("pic");
+        if (document.getElementById('pic').complete) {
+            canvas.width = $('#pic').width();
+            canvas.height = $('#pic').height();
+        } else {
+            $('#pic').one('load', function () {
+                canvas.width = $(this).width();
+                canvas.height = $(this).height();
+            });
+        }
+        modeButton = document.getElementById("mode_button");
+        canvas.style.cursor = "crosshair";
+
+        $('#instruction').slideUp(1000);
+
+        $('#title').click(function () {
+            $('#instruction').clearQueue();
+            $('#instruction').slideToggle();
+        });
+    }
+
+    start();
+
+</script>
+
+<crowd-form>
+    <input name="annotations" id="annotations" type="hidden">
+    <crowd-button id="hiddenSubmit" form-action="submit" style="display: none;"></crowd-button>
+</crowd-form>
+<crowd-button id="submitButton">Submit</crowd-button>

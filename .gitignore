@@ -2,3 +2,9 @@
 *.png
 *.asv
 23-Feb-2019_18-59-27/review.csv
+node_modules
+bundle*
+egg_labels*
+labelled-data
+.vscode
+debug*

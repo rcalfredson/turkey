@@ -1,0 +1,24 @@
+<script type="text/javascript" src="node_modules/paper/dist/paper-full.js"></script>
+<script type="text/javascript">
+    window.onload = function() {
+        var canvas = document.getElementById('myCanvas');
+        paper.install(window);
+        paper.setup(canvas);
+        var tool = new Tool();
+        console.log(tool);
+        var circlePath = new Path.Circle(new Point(50, 50), 25);
+        var symbol = new Symbol(circlePath);
+        circlePath.fillColor = 'black';
+        /*
+        tool.onMouseMove = function (event) {
+            console.log(`point? ${event.point}`);
+            circlePath.position = event.point;
+        }
+        */
+       canvas.addEventListener('mousemove', function(event) {
+           circlePath.position = new Point(event.offsetX, event.offsetY);
+       })
+    }
+</script>
+<canvas id="myCanvas"></canvas>
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>

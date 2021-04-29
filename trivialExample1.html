@@ -1,0 +1,8 @@
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+<crowd-form>
+    <input name="annotations" id="annotations" type="hidden">
+    <crowd-button id="submitter" form-action="submit">Submit</crowd-button>
+</crowd-form>
+<script type="text/javascript">
+    document.getElementById('annotations').value = JSON.stringify({testKey: 'testval'});
+</script>

@@ -1,0 +1,43 @@
+{
+  "name": "turkey",
+  "version": "1.0.0",
+  "description": "Tool for object annotation on Amazon's SageMaker platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node minifyAppHtml.js && browserify turkey.js > bundle.js && babel bundle.js | uglifyjs > bundle.min.js && browserify helpers.js > bundleHelpers.js && babel bundleHelpers.js | uglifyjs > bundleHelpers.min.js",
+    "build-dev": "node minifyAppHtml.js --dev && browserify turkey.js > bundleDev.js && babel bundleDev.js | uglifyjs > bundleDev.min.js && browserify helpers.js > bundleHelpersDev.js && babel bundleHelpersDev.js | uglifyjs > bundleHelpersDev.min.js",
+    "pretest": "eslint turkey.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yanfengliu/turkey.git"
+  },
+  "keywords": [
+    "object",
+    "annotation",
+    "sagemaker",
+    "segmentation"
+  ],
+  "author": "Robert C. Alfredson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yanfengliu/turkey/issues"
+  },
+  "homepage": "https://github.com/yanfengliu/turkey#readme",
+  "dependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "@types/node": "^14.14.1",
+    "html-minifier": "^4.0.0",
+    "paper": "^0.12.8",
+    "pretty": "^2.0.0",
+    "randomcolor": "^0.6.2",
+    "simplify-js": "^1.2.4"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.12.1",
+    "@babel/core": "^7.12.3",
+    "@babel/preset-env": "^7.12.1",
+    "eslint": "^7.12.1"
+  }
+}

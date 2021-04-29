@@ -1,0 +1,507 @@
+<!-- 
+    turkey: an Amazon Mechanical Turk turn-key segment tool.
+
+    MIT License
+
+    Copyright (c) 2018 Yanfeng Liu, Jay Carlson, Eric Psota, Lance C. Pérez
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+ -->
+
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+    integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+    crossorigin="anonymous"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+    integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+    integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+    crossorigin="anonymous"></script>
+<style>
+    .annotatorParent {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+
+    #annotatorTool {
+        flex-grow: 1;
+        border: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .wrapper {
+        position: relative;
+        padding-bottom: 50%;
+        /* 16:9 */
+        padding-top: 0px;
+        height: 0;
+    }
+
+    .wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+<div class="annotatorParent">
+    <iframe id="annotatorTool" sandbox="allow-popups allow-scripts allow-same-origin"></iframe>
+</div>
+<script>
+    var breakoutInstructions = function () {
+        var win = window.open("", "Title", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=780,height=200,top=" + (screen.height - 400) + ",left=" + (screen.width - 840));
+        var iframe = document.getElementById('annotatorTool');
+        var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+        let instructionsHtml = innerDoc.getElementById('text').innerHTML;
+        win.document.body.innerHTML = instructionsHtml;
+        win.document.getElementById('instruction').style.display = 'block';
+        win.document.getElementById('instruction').style.fontFamily = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"';
+        win.document.getElementsByTagName('body')[0].style.overflow = 'auto';
+        win.document.getElementById('instruction').style.overflow = 'auto';
+        win.document.getElementsByTagName('body')[0].style.height = '100%';
+        for (item of win.document.getElementsByTagName('h5')) {
+            item.style.fontSize = '18px';
+        }
+        win.document.getElementById('showInstructions').remove()
+    }
+</script>
+<script type="text/javascript">
+    $(document).ready(() => {
+        var adjustedHeight = false;
+        function checkForForm(adjustedHeight) {
+            if (!adjustedHeight) {
+                setTimeout(() => {
+                    let formElement = document.getElementById('amzn-crowd-form').getElementsByTagName('form')[0]
+                    if (formElement) {
+                        adjustedHeight = true;
+                        formElement.style.height = '0px';
+                    }
+                    checkForForm(adjustedHeight);
+                }, 1000)
+            }
+        }
+        checkForForm(adjustedHeight);
+    });
+    document.getElementById('annotatorTool').contentWindow.document.write(
+        // importScript
+'<style>' +
+'  #editorOuter {' +
+'    /* width: 1200px; */' +
+'    width: 100%;' +
+'    overflow: hidden;' +
+'    position: relative;' +
+'    background: #8f9192;' +
+'    /* margin-left: 15px; */' +
+'  }' +
+'' +
+'  #editorInner {' +
+'    margin: auto;' +
+'  }' +
+'' +
+'  #myCanvas {' +
+'    position: absolute;' +
+'  }' +
+'' +
+'  #pic {' +
+'    width: 100%;' +
+'    height: auto;' +
+'  }' +
+'' +
+'  #text {' +
+'    width: 1000px;' +
+'  }' +
+'' +
+'  .btn:hover {' +
+'    text-shadow: 0px 0px 1px black;' +
+'  }' +
+'' +
+'  .fixed_width {' +
+'    width: 130px !important;' +
+'  }' +
+'' +
+'  #object-class-wrapper {' +
+'    width: 140px;' +
+'    margin: 10px auto 0;' +
+'    text-align: center;' +
+'    color: whitesmoke' +
+'  }' +
+'' +
+'  #object-class {' +
+'    width: 140px;' +
+'  }' +
+'' +
+'  #text {' +
+'    margin-bottom: 20px;' +
+'  }' +
+'' +
+'  #buttons {' +
+'    margin-top: 20px;' +
+'    margin-left: 1px;' +
+'  }' +
+'' +
+'  #show_clicks_button {' +
+'    display: none;' +
+'  }' +
+'' +
+'  /* #instructions-toggle {' +
+'    background-color: rgb(128, 38, 201);' +
+'    color: white;' +
+'  } */' +
+'' +
+'  .slider-and-label label {' +
+'    color: white;' +
+'    float: none;' +
+'  }' +
+'' +
+'  #left-panel {' +
+'    background-color: #4b5162;' +
+'    width: 167px;' +
+'    float: left;' +
+'    height: 100%;' +
+'  }' +
+'' +
+'  #right-panel {' +
+'    padding-top: 40px;' +
+'    background-color: #4b5162;' +
+'    width: 40px;' +
+'    height: inherit;' +
+'    float: right;' +
+'  }' +
+'' +
+'  #check-annots-mode-text {' +
+'    position: absolute;' +
+'    bottom: 35px;' +
+'    right: 80px;' +
+'    color: rgb(251, 255, 0);' +
+'    z-index: 997;' +
+'    pointer-events: none;' +
+'    font-size: 1rem;' +
+'  }' +
+'' +
+'' +
+'  #keyboard-shortcuts {' +
+'    position: absolute;' +
+'    top: 32px;' +
+'    right: 60px;' +
+'    color: white;' +
+'    z-index: 999;' +
+'    pointer-events: none;' +
+'  }' +
+'' +
+'  .toggle-button-parent {' +
+'    font-size: 0;' +
+'    display: inline;' +
+'    cursor: pointer;' +
+'  }' +
+'' +
+'  .toggle-button-parent span,' +
+'  .toggle-button-parent a {' +
+'    font-size: 13px;' +
+'  }' +
+'' +
+'  #keyboard-shortcuts span,' +
+'  #keyboard-shortcuts a {' +
+'    color: white;' +
+'  }' +
+'' +
+'  .overlay-header {' +
+'    font-size: 21;' +
+'    font-weight: 600;' +
+'  }' +
+'' +
+'  #shortcuts-header {' +
+'    color: white;' +
+'  }' +
+'' +
+'  #shortcuts-toggle,' +
+'  #check-mode-toggle-text {' +
+'    text-decoration: underline;' +
+'  }' +
+'' +
+'  .toggle-button {' +
+'    position: relative;' +
+'    pointer-events: all;' +
+'  }' +
+'' +
+'  #shortcuts-table {' +
+'    border: none;' +
+'    color: white;' +
+'    z-index: 998;' +
+'  }' +
+'' +
+'  table {' +
+'    border-collapse: separate;' +
+'    border-spacing: 0 20px;' +
+'  }' +
+'' +
+'  table td,' +
+'  table td * {' +
+'    vertical-align: top;' +
+'    padding: 0 20px 0 0;' +
+'  }' +
+'' +
+'  td:nth-child(1) {' +
+'    width: 150px;' +
+'  }' +
+'' +
+'  td:nth-child(2) {' +
+'    width: 240px;' +
+'  }' +
+'' +
+'  .input-group {' +
+'    padding-left: 15px;' +
+'    height: 70px;' +
+'  }' +
+'' +
+'  .spacer {' +
+'    height: 40px;' +
+'  }' +
+'' +
+'  .half-spacer {' +
+'    height: 20px;' +
+'  }' +
+'' +
+'  #brush_rad_slider,' +
+'  #opacity_slider {' +
+'    width: 140px;' +
+'  }' +
+'' +
+'  #brush_rad_slider .slider-selection,' +
+'  #opacity_slider .slider-selection {' +
+'    background: #8b8d99a2;' +
+'  }' +
+'</style>' +
+'<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></sc' +
+'ript>' +
+'<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></sc' +
+'ript>' +
+'<link id="bootstrap-css" rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">' +
+'<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></sc' +
+'ript>' +
+'<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/css/bootstrap-slider.min.css">' +
+'<script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.7/paper-full.js"></sc' +
+'ript>' +
+'<!-- Modals -->' +
+'<div class="modal fade" id="clearAnnotationsModal" tabindex="-1" role="dialog" aria-labelledby="clearAnnotationsModalLabel" aria-hidden="true">' +
+'  <div class="modal-dialog modal-dialog-centered" role="document">' +
+'    <div class="modal-content">' +
+'      <div class="modal-header">' +
+'        <h5 class="modal-title" id="clearAnnotationsModalLabel">Caution</h5>' +
+'        <button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+'          <span aria-hidden="true">&times;</span>' +
+'        </button>' +
+'      </div>' +
+'      <div class="modal-body">' +
+'        Are you sure you want to <strong>clear all annotations on this image</strong>?' +
+'      </div>' +
+'      <div class="modal-footer">' +
+'        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">No, go back</button>' +
+'        <button id="reset_button" data-dismiss="modal" type="button" class="btn btn-danger">Yes</button>' +
+'      </div>' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+'<div class="modal fade" id="unfinishedAnnotationsModal" tabindex="-1" role="dialog" aria-labelledby="unfinishedAnnotationsModalLabel" aria-hidden="true">' +
+'  <div class="modal-dialog modal-dialog-centered" role="document">' +
+'    <div class="modal-content">' +
+'      <div class="modal-header">' +
+'        <h5 class="modal-title" id="unfinishedAnnotationsModalLabel">Caution</h5>' +
+'        <button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+'          <span aria-hidden="true">&times;</span>' +
+'        </button>' +
+'      </div>' +
+'      <div class="modal-body">' +
+'        Warning: there are unconfirmed annotations on the page. Please finish annotating before hitting submit.' +
+'      </div>' +
+'      <div class="modal-footer">' +
+'        <button type="button" class="btn btn-primary" data-dismiss="modal">Continue annotating</button>' +
+'      </div>' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+'<div class="modal fade" id="annotationCountWarningModal" tabindex="-1" role="dialog" aria-labelledby="annotationCountWarningModalLabel" aria-hidden="true">' +
+'  <div class="modal-dialog modal-dialog-centered" role="document">' +
+'    <div class="modal-content">' +
+'      <div class="modal-header">' +
+'        <h5 class="modal-title" id="annotationCountWarningModalLabel">Error</h5>' +
+'        <button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+'          <span aria-hidden="true">&times;</span>' +
+'        </button>' +
+'      </div>' +
+'      <div class="modal-body">' +
+'        There <span id="egg-discrepancy-description"></span>' +
+'        <span id="egg-discrepancy-request"></span>' +
+'      </div>' +
+'      <div class="modal-footer">' +
+'        <button type="button" class="btn btn-primary" data-dismiss="modal" id="annotationWarningDismissButton">OK</button>' +
+'        <button id="submit-from-modal" type="button" class="btn btn-primary" hidden data-dismiss="modal">Submit</button>' +
+'      </div>' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+'<!-- End modals -->' +
+'<div id="text" style="display:inline-block;vertical-align:top;padding-left: 15px;padding-top: 15px;">' +
+'  <div id="instruction">' +
+'    <button type="button" class="btn btn-primary instructions-toggle">Instructions</button>' +
+'    <br><br>' +
+'    Please draw a segmentation mask over each individual egg in the image. Eggs are typically' +
+'    dark, oblong, and have antennae; however, sometimes they may also be lighter and more irregularly shaped.<br><br>' +
+'    <h5>How to identify eggs</h5><span style="color: #0ba133"><strong>Good example</strong><br>' +
+'    </span> Each egg is labelled to its outer edge, excluding antennae. Individual eggs are accurately labelled even in' +
+'    the dense regions.<br>' +
+'    <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/goodLabelsExampleMechTurk.jpg"><br><br>' +
+'    Sometimes the eggs are dimmer, such as the one at the bottom of this image, but they should still be counted.<br>' +
+'    <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/dimEggExample.jpg"><br><br><span style="color: #a11a0b"><strong>Bad example</strong><br></span>' +
+'    In this example, the labeling problems are as follows:<ol>' +
+'      <li>Some eggs are not labelled.</li>' +
+'      <li>Large dark regions are labelled even though they are not eggs.</li>' +
+'      <li>Some labels span multiple eggs.</li>' +
+'      <li>Labels do not align well with the borders of the eggs, and have irregular shapes instead of the expected oval.' +
+'      </li>' +
+'    </ol><img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/badExamples.jpg"><br><br>' +
+'    <h5>How to use the tool</h5>' +
+'    <ul>' +
+'      <li><strong>Left click</strong> to annotate the image using the brush tool when in annotation mode and to delete' +
+'        annotations when in delete mode.</li>' +
+'      <li><strong>Press Shift and drag (while pressing left mouse button)</strong> to pan the image.</li>' +
+'      <li>Press <strong>C</strong> to confirm a label and lock it from further editing.</li>' +
+'      <li>Click <strong>Delete/Annotate</strong> flip switch or press <strong>D</strong> to toggle between deleting and' +
+'        annotating.</li>' +
+'      <li>Click the <strong>Undo</strong> button or press <strong>Ctrl + z</strong> to undo.</li>' +
+'      <li>Click the <strong>Reset</strong> button to clear all annotations.</li>' +
+'      <li>Click the <strong>Reposition</strong> button to center the image and reset zoom.</li>' +
+'      <li>Click the <strong>Submit</strong> button to finish current task.</li>' +
+'      <li>Use the <strong>sliders</strong> to adjust brush radius and the annotations\' opacity.</li>' +
+'      <li>Use the <strong>scroll wheel</strong> to zoom in and out.</li>' +
+'    </ul>' +
+'  </div>' +
+'</div>' +
+'<div id="editorOuter">' +
+'  <aside id="left-panel">' +
+'    <div class="btn-group-vertical" id="buttons">' +
+'      <div class="half-spacer"></div>' +
+'      <button type="button" class="btn btn-primary instructions-toggle">Instructions</button>' +
+'      <input class="btn btn-primary mr-1" id="view_button" type="button" value="View style: fill">' +
+'      <input hidden class="btn btn-primary mr-1" id="mode_button" type="button" value="Dot Mode">' +
+'      <span id="delete_flip" class="btn-group btn-group-toggle mr-1" data-toggle="buttons">' +
+'        <label class="btn btn-outline-secondary" type="radio" name="options" id="delete_button" autocomplete="off" checked="checked">Delete</label>' +
+'        <label class="btn btn-primary" type="radio" name="options" id="annotate_button" autocomplete="off">Annotate</label></span>' +
+'      <input hidden aria-h class="btn btn-primary" id="undo_button" type="button" value="Undo">' +
+'      <input class="btn btn-primary mr-1" data-toggle="modal" data-target="#clearAnnotationsModal" type="button" value="Clear annotations">' +
+'      <input class="btn btn-primary mr-1" id="reposition_button" type="button" value="Default view">' +
+'      <input class="btn btn-primary mr-1" id="show_clicks_button" type="button" value="Check annotations">' +
+'      <input class="btn btn-primary mr-1" type="button" id="submitButton" value="Submit">' +
+'      <input hidden data-toggle="modal" data-target="#unfinishedAnnotationsModal" type="button" id="show-unfinished-annotations-modal">' +
+'      <input hidden data-toggle="modal" data-target="#annotationCountWarningModal" type="button" id="show-annotation-count-warning-modal">' +
+'    </div>' +
+'    <div hidden id="object-class-wrapper">' +
+'      <label for="object-class">Category</label>' +
+'      <select id="object-class" class="form-control text-center"></select>' +
+'    </div>' +
+'    <br>' +
+'    <div class="spacer"></div>' +
+'    <div class="input-group">' +
+'      <div class="slider-and-label">' +
+'        <label for="opacity_slider" style="display: table-cell;">Opacity</label>' +
+'        <input type="text" data-slider-min="0" data-slider-max="100" data-slider-id="opacity_slider" id="opacity_slider">' +
+'      </div>' +
+'    </div>' +
+'    <div class="input-group">' +
+'      <div class="slider-and-label">' +
+'        <label for="brush_rad_slider" style="display: table-cell;">Brush radius</label>' +
+'        <input type="text" data-slider-id="brush_rad_slider" data-slider-value="3" data-slider-min="1" data-slider-step="1" data-slider-max="15" id="brush_rad_slider">' +
+'      </div>' +
+'    </div>' +
+'  </aside>' +
+'  <aside id="right-panel"></aside>' +
+'  <div id="keyboard-shortcuts">' +
+'    <span class="overlay-header" id="shortcuts-header">Keyboard and mouse commands</span>' +
+'    <div class="toggle-button-parent"><span style="padding-left: 15px;">(</span>' +
+'      <a class="toggle-button" id="shortcuts-toggle">hide</a>' +
+'      <span>)</span>' +
+'    </div>' +
+'    <table id="shortcuts-table">' +
+'      <tr>' +
+'        <td>Left button</td>' +
+'        <td>Paint (annotate) while button held (in annotate mode)</td>' +
+'      </tr>' +
+'      <tr>' +
+'        <td>Shift + Left button</td>' +
+'        <td>Drag image</td>' +
+'      </tr>' +
+'      <tr>' +
+'        <td>Scroll wheel</td>' +
+'        <td>Zoom</td>' +
+'      </tr>' +
+'      <tr>' +
+'        <td>Enter</td>' +
+'        <td>Confirm annotation(s)</td>' +
+'      </tr>' +
+'      <tr>' +
+'        <td>D</td>' +
+'        <td>Toggle delete/annotate modes</td>' +
+'      </tr>' +
+'      <tr>' +
+'        <td>Ctrl + Z</td>' +
+'        <td>Undo</td>' +
+'      </tr>' +
+'    </table>' +
+'  </div>' +
+'  <div hidden id="check-annots-mode-text">' +
+'    <span>Highlighting eggs missing annotations and annotations in<br>areas without eggs (uncalled-for annotations).</span>' +
+'    <div class="toggle-button-parent"><span style="padding-left: 15px;">(</span>' +
+'      <a class="toggle-button" id="check-mode-toggle-text">turn off</a>' +
+'      <span>)</span>' +
+'    </div><br>' +
+'    <span>Note: your annotations may be more correct than the egg<br>position data.</span>' +
+'  </div>' +
+'  <div id="editorInner">' +
+'    <canvas id="myCanvas" keepalive="true"></canvas>' +
+'    <img id="pic" src="{{ task.input.taskObject | grant_read_access }}">' +
+'    <span hidden id="click-json-url"></span>' +
+'  </div>' +
+'</div>' +
+'<script id="turkey" type="text/javascript" src="https://egg-laying.s3.us-east-2.amazonaws.com/assets/bundleDev.min.js"></sc' +
+'ript>' +
+'<script type="text/javascript" id="helpers" type="text/javascript" src="https://egg-laying.s3.us-east-2.amazonaws.com/assets/bundleHelpersDev.min.js">' +
+'  </sc' +
+'ript>' // endImportScript
+    );
+    setTimeout(() => {
+        document.getElementById('annotatorTool').focus();
+    }, 100);
+    $('body').click(() => {
+        document.getElementById('annotatorTool').focus();
+    })
+</script>
+
+<crowd-form id="amzn-crowd-form">
+    <crowd-input name="annotations" id="annotations" type="hidden"></crowd-input>
+
+    <!-- Prevent crowd-form from creating its own button -->
+    <crowd-button id="hiddenSubmit" form-action="submit" style="display: none;"></crowd-button>
+</crowd-form>

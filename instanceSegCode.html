@@ -1,0 +1,32 @@
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<crowd-form>
+  <crowd-instance-segmentation
+    name="annotatedResult"
+    src="{{ task.input.taskObject | grant_read_access }}"
+    header="Please draw a segmentation mask over each individual egg in the image. Eggs are typically dark, oblong, and have antennae; however, sometimes they may also be lighter and more irregularly shaped (see examples under &quot;Instructions&quot;)."
+    labels="['egg']"
+  >
+    <full-instructions header="Segmentation Instructions">
+      <span style="color: #0ba133"><h2>Good example</h2></span> Each egg is labelled to its outer edge, excluding antennae. Individual eggs are accurately labelled even in the dense regions.
+<br> 
+<img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/goodLabelsExampleMechTurk.jpg">
+<br> Sometimes the eggs are dimmer, such as the one at the bottom of this image, but they should still be counted. 
+<br> 
+<img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/dimEggExample.jpg">
+<br> 
+<span style="color: #a11a0b"><h2>Bad example</h2></span> In this example, the labelling problems are as follows: 
+<ol> 
+ <li>Some eggs are not labelled.</li> 
+ <li>Large dark regions are labelled even though they are not eggs.</li> 
+ <li>Some labels span multiple eggs.</li> 
+ <li>Labels do not align well with the borders of the eggs, and have irregular shapes instead of the expected oval.</li> 
+</ol> 
+<img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/badExamples.jpg">
+    </full-instructions>
+
+    <short-instructions>
+      <p><strong>Important:</strong> Please open &quot;More instructions.&quot;</p>
+    </short-instructions>
+  </crowd-instance-segmentation>
+</crowd-form>

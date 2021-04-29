@@ -1,0 +1,51 @@
+<style>
+    #instruction{
+        font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    }
+    h5 {
+        font-size: 18px;
+    }
+</style>
+
+<div id="text" style="display:inline-block;vertical-align:top;padding-left: 15px;padding-top: 15px;">
+    <div id="instruction">
+        Please draw a segmentation mask over each individual egg in the image. Eggs are typically
+        dark, oblong, and have antennae; however, sometimes they may also be lighter and more irregularly
+        shaped.<br><br>
+        <h5>How to identify eggs</h5><span style="color: #0ba133"><strong>Good example</strong><br>
+        </span> Each egg is labelled to its outer edge, excluding antennae. Individual eggs are accurately labelled even
+        in
+        the dense regions.<br>
+        <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/goodLabelsExampleMechTurk.jpg"><br><br>
+        Sometimes the eggs are dimmer, such as the one at the bottom of this image, but they should still be
+        counted.<br>
+        <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/dimEggExample.jpg"><br><br><span
+            style="color: #a11a0b"><strong>Bad example</strong><br></span>
+        In this example, the labeling problems are as follows:<ol>
+            <li>Some eggs are not labelled.</li>
+            <li>Large dark regions are labelled even though they are not eggs.</li>
+            <li>Some labels span multiple eggs.</li>
+            <li>Labels do not align well with the borders of the eggs, and have irregular shapes instead of the expected
+                oval.
+            </li>
+        </ol><img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/badExamples.jpg"><br><br>
+        <h5>How to use the tool</h5>
+        <ul>
+            <li><strong>Left click</strong> to annotate the image using the brush tool when in annotation mode and to
+                delete
+                annotations when in delete mode.</li>
+            <li><strong>Press Shift and drag (while pressing left mouse button)</strong> to pan the image.</li>
+            <li>Press <strong>C</strong> to confirm a label and lock it from further editing.</li>
+            <li>Click <strong>Delete/Annotate</strong> flip switch or press <strong>D</strong> to toggle between
+                deleting and
+                annotating.</li>
+            <li>Click the <strong>Undo</strong> button or press <strong>Ctrl + z</strong> to undo.</li>
+            <li>Click the <strong>Reset</strong> button to clear all annotations.</li>
+            <li>Click the <strong>Reposition</strong> button to center the image and reset zoom.</li>
+            <li>Click the <strong>Submit</strong> button to finish current task.</li>
+            <li>Use the <strong>sliders</strong> to adjust brush radius and the annotations' opacity.</li>
+            <li>Use the <strong>scroll wheel</strong> to zoom in and out.</li>
+        </ul>
+    </div>
+</div>
+</div>

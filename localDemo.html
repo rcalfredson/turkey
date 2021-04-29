@@ -17,7 +17,7 @@
 
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THEv
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
@@ -49,10 +49,15 @@
         var req = new XMLHttpRequest();
         req.onload = function(e) 
         {
+            console.log('e:');
+            console.log(e);
             document.getElementById("container").innerHTML = e.target.response;
-            document.getElementById("pic").src = "https://i.imgur.com/T9cqo2v.jpg";
+            document.getElementById("pic").src = "https://egg-laying.s3.us-east-2.amazonaws.com/images/9_11_2020_IMG_0008_0.jpg";
             document.getElementById("title").innerText="Turkey Local Demo";
             eval(document.getElementById("turkey").innerHTML);
+            console.log('what is turkey inner html?');
+            document.getElementById("turkey").src = 'bundle.js';
+            console.log(document.getElementById("turkey"));
             document.getElementById("pic").onload = function() {start(); }
             document.getElementById("submitButton").addEventListener("click", function(e) {
                 document.getElementById("outputLabel").style.visibility = "visible";

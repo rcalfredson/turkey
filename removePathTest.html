@@ -1,0 +1,157 @@
+<!--<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+    integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<link crossorigin="anonymous" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css"
+    integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" rel="stylesheet" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>-->
+<script type="text/javascript" src="node_modules/paper/dist/paper-full.js"></script>
+<script type="text/javascript" src="sjs.js"></script>
+<canvas id="myCanvas"></canvas>
+<script type="text/javascript">
+    var pointerDown = false;
+    let brushStroke;
+    let brushUnited;
+    let oldBrushes = [];
+    let pointsUnited;
+    var getRandColor = function () {
+        var randomColor = "#000000".replace(/0/g, function () { return (~~(Math.random() * 16)).toString(16); });
+        return randomColor;
+    }
+    let brush = {
+        pathOptions: {
+            strokeColor: getRandColor(),
+            strokeWidth: 1,
+            radius: 1
+        }
+    }
+    var createBrush = function (center) {
+        console.log('creating a new brush');
+        center = center || new paper.Point(0, 0);
+
+        brush.path = new paper.Path.Circle({
+            strokeColor: brush.pathOptions.strokeColor,
+            strokeWidth: brush.pathOptions.strokeWidth,
+            radius: brush.pathOptions.radius,
+            center: center
+        });
+    }
+    var moveBrush = function (xOffset, yOffset) {
+        if (brush.path == null) createBrush();
+
+        brush.path.bringToFront();
+        brush.path.position = new paper.Point(xOffset, yOffset);
+        // brush.path.position = event.point;
+    };
+
+    var createSelection = function () {
+        console.log('creating new brushstroke');
+        brushStroke = new paper.Path({
+            strokeColor: brush.pathOptions.strokeColor,
+            strokeWidth: brush.pathOptions.strokeWidth
+        });
+    };
+
+    var uniteCurrentAnnotation = function (existing, newStroke, simplify = true) {
+        let newCompound = new paper.CompoundPath();
+        if (brushUnited instanceof paper.CompoundPath) {
+            newCompound = brushUnited.unite(newStroke);
+        } else {
+            newCompound = newCompound.unite(newStroke);
+        }
+        if (newCompound instanceof paper.Path) {
+            newCompound = new paper.CompoundPath(newCompound);
+        }
+        let newChildren = [];
+        console.log('type of brushUnited:');
+        console.log(newCompound instanceof paper.CompoundPath);
+        newCompound.children.forEach(path => {
+            let points = [];
+
+            path.segments.forEach(seg => {
+                points.push({ x: seg.point.x, y: seg.point.y });
+            });
+            points = window.simplifyjs(points, 1, true);
+
+            let newPath = new paper.Path(points);
+            newPath.closePath();
+
+            newChildren.push(newPath);
+        });
+        newCompound.removeChildren();
+        console.log('new children?')
+        console.log(newChildren);
+        newCompound.addChildren(newChildren);
+        console.log('simplified path:')
+        newCompound.children.forEach(path => {
+            console.log(path.segments);
+        });
+        if (brushUnited instanceof paper.CompoundPath) {
+            brushUnited.remove();
+        }
+        brushUnited = newCompound;
+        console.log('brushunited at end?');
+        console.log(brushUnited);
+        brushUnited.fillColor = brush.pathOptions.strokeColor;
+        brushUnited.opacity = 0.4;
+    };
+
+    var removeSelection = function () {
+        if (brushStroke != null) {
+            console.log('removing the brushstroke');
+            console.log('before');
+            console.log(brushStroke);
+            brushStroke.remove();
+            console.log('after')
+            console.log(brushStroke)
+            brushStroke = null;
+        }
+    }
+
+    var draw = function () {
+        let newSelection = brushStroke.unite(brush.path);
+
+        brushStroke.remove();
+        console.log('newSelection:');
+        console.log(newSelection);
+        brushStroke = newSelection;
+    };
+    // window.onload = function () {
+    var canvas = document.getElementById('myCanvas');
+    var ctx = canvas.getContext("2d");
+    // paper.install(window);
+    // paper.setup(canvas);
+    // var tool = new Tool();
+    // console.log(tool);
+    // var circlePath = new Path.Circle(new Point(50, 50), 25);
+    // var symbol = new Symbol(circlePath);
+    // circlePath.fillColor = 'black';
+    window.addEventListener('keydown', function (evt) {
+        // if (evt.key == 'c') {
+        //     brush.pathOptions.strokeColor = getRandColor();
+        //     oldBrushes.push(brushUnited);
+        //     brushUnited = null;
+        // }
+    })
+    canvas.addEventListener('mousemove', function (evt) {
+        // if (pointerDown) {
+        //     moveBrush(evt.offsetX, evt.offsetY);
+        //     draw();
+        // } else {
+        //     moveBrush(evt.offsetX, evt.offsetY);
+        // }
+    });
+    canvas.addEventListener('pointerdown', function (evt) {
+        // pointerDown = true;
+        // createSelection();
+        // draw();
+    });
+    canvas.addEventListener('pointerup', function (evt) {
+        // pointerDown = false;
+        // uniteCurrentAnnotation(brushUnited, brushStroke);
+        // removeSelection();
+        let dotSize = 20
+        console.log('filling rect?')
+
+        ctx.fillRect(30, 30, dotSize, dotSize);
+    });
+    // }
+</script>

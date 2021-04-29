@@ -1,0 +1,19 @@
+With zoom at 80%:
+canvas width? bundleDev.min.js:1:24827
+1376 bundleDev.min.js:1:24856
+scaling when the click positions are loaded: bundleDev.min.js:1:25373
+1.5288000000000002 bundleDev.min.js:1:25433
+1.5288000000000004 bundleDev.min.js:1:25473
+and image offset: bundleDev.min.js:1:25513
+516.7744 bundleDev.min.js:1:25546
+8.57999999999987
+
+With zoom at 100%:
+canvas width? bundleDev.min.js:1:24827
+1679 bundleDev.min.js:1:24856
+scaling when the click positions are loaded: bundleDev.min.js:1:25373
+0.7519272727272728 bundleDev.min.js:1:25433
+0.7519272727272729 bundleDev.min.js:1:25473
+and image offset: bundleDev.min.js:1:25513
+755.2841454545454 bundleDev.min.js:1:25546
+4.219999999999942
