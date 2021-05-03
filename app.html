@@ -29,6 +29,10 @@
     text-shadow: 0px 0px 1px black;
   }
 
+  .inline-header {
+    display: inline-block;
+  }
+
   .fixed_width {
     width: 130px !important;
   }
@@ -72,6 +76,8 @@
     width: 167px;
     float: left;
     height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   #right-panel {
@@ -90,8 +96,17 @@
     z-index: 997;
     pointer-events: none;
     font-size: 1rem;
+    width: 371px;
   }
 
+  #reportBugModal {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #reportBugModal .modal-dialog {
+    width: 100%;
+    max-width: 800px;
+  }
 
   #keyboard-shortcuts {
     position: absolute;
@@ -146,6 +161,25 @@
   table {
     border-collapse: separate;
     border-spacing: 0 20px;
+  }
+
+  #bug-summary-input {
+    border-color:#4b5162;
+    padding: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: .8rem;
+    max-width: 600px;
+  }
+
+  #screenshot-preview {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #ccc;
+    margin-bottom: 1rem;
   }
 
   table td,
@@ -257,12 +291,38 @@
     </div>
   </div>
 </div>
+<div class="modal fade modal-lg" id="reportBugModal" tabindex="-1" role="dialog" aria-labelledby="reportBugModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document" style="width:90%">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportBugModalLabel">Report bug</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Please write a summary of the bug you encountered, including as much detail as desired. This report will be sent
+        to the developers, along with a screenshot of the app.<br>
+        Note: after submitting, it is not possible to continue annotating the current image.
+      </div>
+      <div style="text-align: center;"><p>Preview of captured screenshot:</p></div>
+      <img id="screenshot-preview" src="">
+      <textarea id="bug-summary-input" rows="5" cols="95" placeholder="Write your summary here"></textarea>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal"
+          id='bugReportSubmit'>Submit</button>
+        <button id='submit-from-modal' type="button" class="btn btn-primary" hidden data-dismiss="modal">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- End modals -->
 <div id="text" style="display:inline-block;vertical-align:top;padding-left: 15px;padding-top: 15px;">
   <div id="instruction">
     <button type="button" class="btn btn-primary instructions-toggle">Instructions</button>
     <br><br>
-    <h3>Summary</h3>
+    <h5>Summary</h5>
     <ul>
       <li>In this task, we ask you to "segment" (annotate) each <i>Drosophila</i> (fruit fly) egg in the given image.
         Here is a sample image with nine <i>Drosophila</i> eggs, which are oval and have two dorsal appendages that look
@@ -270,38 +330,144 @@
         <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/Jun3_11left r3c4.jpg">
       </li>
     </ul>
-    <h3>Background</h3>
-    
-    Please draw a segmentation mask over each individual egg in the image. Eggs are typically
-    dark, oblong, and have antennae; however, sometimes they may also be lighter and more irregularly shaped.<br><br>
-    <h5>How to identify eggs</h5><span style="color: #0ba133"><strong>Good example</strong><br>
-    </span> Each egg is labelled to its outer edge, excluding antennae. Individual eggs are accurately labelled even in
-    the dense regions.<br>
-    <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/goodLabelsExampleMechTurk.jpg"><br><br>
-    Sometimes the eggs are dimmer, such as the one at the bottom of this image, but they should still be counted.<br>
-    <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/dimEggExample.jpg"><br><br><span
-      style="color: #a11a0b"><strong>Bad example</strong><br></span>
-    In this example, the labeling problems are as follows:<ol>
-      <li>Some eggs are not labelled.</li>
-      <li>Large dark regions are labelled even though they are not eggs.</li>
-      <li>Some labels span multiple eggs.</li>
-      <li>Labels do not align well with the borders of the eggs, and have irregular shapes instead of the expected oval.
-      </li>
-    </ol><img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/badExamples.jpg"><br><br>
-    <h5>How to use the tool</h5>
+    <h5 class="inline-header">Background</h5><span style="padding-left: 20px;">(this section is optional reading and not
+      required for the task)</span>
     <ul>
-      <li><strong>Left click</strong> to annotate the image using the brush tool when in annotation mode and to delete
-        annotations when in delete mode.</li>
-      <li><strong>Press Shift and drag (while pressing left mouse button)</strong> to pan the image.</li>
-      <li>Press <strong>C</strong> to confirm a label and lock it from further editing.</li>
-      <li>Click <strong>Delete/Annotate</strong> flip switch or press <strong>D</strong> to toggle between deleting and
-        annotating.</li>
-      <li>Click the <strong>Undo</strong> button or press <strong>Ctrl + z</strong> to undo.</li>
-      <li>Click the <strong>Reset</strong> button to clear all annotations.</li>
-      <li>Click the <strong>Reposition</strong> button to center the image and reset zoom.</li>
-      <li>Click the <strong>Submit</strong> button to finish current task.</li>
-      <li>Use the <strong>sliders</strong> to adjust brush radius and the annotations' opacity.</li>
-      <li>Use the <strong>scroll wheel</strong> to zoom in and out.</li>
+      <li>
+        <i>Drosophila</i> egg-laying is a great system to unravel how a relatively simple brain performs decision making
+        &mdash;a brain function that is generally still poorly understood. Studying the <i>Drosophila</i> brain has the
+        advantages that it is relatively simple compared to, say, the human brain, and likely much easier to understand,
+        and <i>Drosophila</i> offers class-leading research tools in genetics and connectomics. In addition to advancing
+        <i>Drosophila</i> research, we hope our results will help other researchers to better understand how learning
+        and decision making are performed by the neural circuits of higher organisms; <i>Drosophila</i> have about
+        15,500 genes, many of which have homologs (similar genes) in the 22,000-gene human genome.
+      </li>
+      <li>
+        The critical variable to assess egg-laying decisions is the number of eggs laid on an egg-laying area, and
+        counting eggs is currently a manual and time-consuming process in our lab. We are automating the counting using
+        machine learning, aiming to arrive at models with human-level reliability and precision running in a fraction of
+        the time manual counting would take. Your annotations will contribute to the pool of training data for our
+        models.
+      </li>
+    </ul>
+    <h5>Instructions</h5>
+    <ul>
+      <li>
+        It is important that you annotate <strong>each</strong> egg in the image but do <strong>not</strong> annotate
+        non-eggs.
+      </li>
+      <li>There are several ways in which eggs can look different from the initial example above. Different-looking eggs
+        <strong>should be annotated.</strong>
+      </li>
+      <ul>
+        <li>Eggs can be faint (light-colored); faint eggs are shells after hatching or non-viable eggs. Here is a sample
+          picture for which you should annotate all seven eggs, some of which are quite faint:<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/diff_10_4_2020_img_0001_idx_50 snip2.jpg">
+        </li>
+        <li>
+          Eggs can be placed vertically on the egg-laying substrate. Here a sample picture with seven eggs, some of
+          which are vertical and appear more round than oval:<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/9_9_2020_IMG_0008 snip.jpg">
+        </li>
+        <li>
+          Eggs can be partly hidden by plastic. Our chambers have agarose areas (which are relatively soft and on which
+          flies like to lay eggs) separated by hard plastic areas; eggs can be partly hidden ("cut off") by the plastic.
+          Here is an example:<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/Jun22PA_5left snip.jpg">
+        </li>
+      </ul>
+      <li>
+        From time to time, our images show objects that are not eggs and <strong>should not be annotated</strong>.
+      </li>
+      <ul>
+        <li>
+          Larvae should not be annotated and can look similar to faint eggs. Larvae tend to be larger, and, unlike eggs,
+          can have a bent/wiggly shape and may have a darker area in the center. Here two pictures with larvae:<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/diff_oct30_11left_idx_157 snip2.jpg">
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/Oct30_11left snip2.jpg">
+        </li>
+        <li>
+          Sometimes, the images show "dirt," which should not be annotated. Here is an example with dirt and four
+          eggs:<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/diff_9_4_2020_r_idx_52 snip2.jpg">
+        </li>
+        <li>
+          The agarose can have darker areas due to surface irregularities, which typically happen close to the edge of
+          the agarose. Here is an example (which also has one egg):<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/Jun15_7left snip2.jpg">
+        </li>
+      </ul>
+      <li>
+        Finally, eggs can be <strong>overlapping</strong>. Spotting overlapping eggs may require a little getting used
+        to, and overlapping eggs make annotating a little more difficult.
+      </li>
+      <ul>
+        <li>
+          Here is an example showing overlapping eggs. The best way to identify overlapping eggs is that their shape is
+          most consistent with more than one ellipse.<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/diff_9_25_2020_img_0001_idx_202 snip.jpg">
+        </li>
+        <li>
+          When you annotate overlapping eggs, please try to estimate and annotate the full size of each egg. Here is an
+          example with annotations shown:<br>
+          <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/segmentation with overlap.jpg">
+        </li>
+        <li>
+          Some of the images to be annotated will be more complicated than these examples. Please try to perform your
+          best guesses in difficult cases; this is what we do in the lab in such cases.
+        </li>
+      </ul>
+      <li>
+        How to annotate eggs
+      </li>
+      <ul>
+        <li>
+          First egg
+        </li>
+        <ul>
+          <li>
+            Zoom in over an egg to make it relatively large (using mouse wheel), possibly dragging the image to make the
+            egg centered (use Shift + Left mouse button to drag)
+          </li>
+          <li>
+            Use left mouse button to "fill in" <em>all of</em> the egg area; when done, hit Enter to confirm the
+            annotation for the egg
+          </li>
+          <ul>
+            <li>Make sure the inside is fully filled</li>
+            <li>Ctrl+Z can be used to undo recent fills in case you filled an area outside the egg; also, the brush
+              radius can be adjusted with a slider</li>
+          </ul>
+        </ul>
+        <li>
+          For overlapping eggs, Enter must be pressed after each egg&mdash;we need eggs annotated
+          <strong>individually</strong> since our goal is to teach our model to count them. For non-overlapping eggs,
+          several eggs can be annotated before pressing Enter.
+        </li>
+        <li>
+          When you have completed annotating an image, click <i>Default view</i> to manually review your annotations or
+          <i>Check annotations</i>
+        </li>
+        <ul>
+          <li>
+            <i>Check annotations</i> compares your annotations against egg position data created by researchers in our
+            lab; note that your annotations may be more correct than this data, especially in difficult cases
+          </li>
+          <li>
+            If your annotations seem correct, please click the <i>Submit</i> button
+          </li>
+        </ul>
+      </ul>
+      <li>
+        Additional notes
+      </li>
+      <ul>
+        <li>
+          The other buttons and keyboard commands are likely best learned by trying them. E.g., instead of using Ctrl+Z
+          to undo the most recent annotation, you can toggle from Annotate to Delete mode and then delete any annotation
+          you click on.
+        </li>
+      </ul>
     </ul>
   </div>
 </div>
@@ -327,6 +493,7 @@
         id="show-unfinished-annotations-modal" />
       <input hidden data-toggle="modal" data-target="#annotationCountWarningModal" type=button
         id="show-annotation-count-warning-modal" />
+      <input hidden data-toggle="modal" data-target="#reportBugModal" type=button id="show-bug-report-modal" />
     </div>
     <div hidden id="object-class-wrapper">
       <label for="object-class">Category</label>
@@ -347,6 +514,10 @@
         <input type="text" data-slider-id="brush_rad_slider" data-slider-value="3" data-slider-min="1"
           data-slider-step="1" data-slider-max="15" id="brush_rad_slider" />
       </div>
+    </div>
+    <div style="flex-grow: 1;" class="half-spacer"></div>
+    <div class="btn-group-vertical">
+      <input class="btn btn-primary" type="button" id="report_bug_button" value="Report Bug" />
     </div>
   </aside>
   <aside id="right-panel"></aside>
@@ -384,17 +555,17 @@
     </table>
   </div>
   <div hidden id="check-annots-mode-text">
-    <span>Highlighting eggs missing annotations and annotations in<br>areas without eggs (uncalled-for
-      annotations).</span>
+    <span id="highlighting-desc"></span>
     <div class="toggle-button-parent"><span style="padding-left: 15px;">(</span>
       <a class="toggle-button" id="check-mode-toggle-text">turn off</a>
       <span>)</span>
     </div><br>
-    <span>Note: your annotations may be more correct than the egg<br>position data.</span>
+    <span id="highlighting-disclaimer">Note: your annotations may be more correct than the egg position data used for
+      the highlighting.</span>
   </div>
   <div id="editorInner">
     <canvas id="myCanvas" keepalive="true"></canvas>
-    <img id="pic" src="{{ task.input.taskObject | grant_read_access }}" />
+    <img id="pic" src="{{ task.input.taskObject | grant_read_access }}" crossorigin="anonymous" />
     <span hidden id="click-json-url"></span>
   </div>
 </div>

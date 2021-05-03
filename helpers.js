@@ -12,9 +12,38 @@ function toggleInstructions() {
         document.getElementById("shortcuts-table").style.opacity = 0;
     }
 }
+window.updateHighlightingText = function () {
+    let numOrphanedEggs = window.numEggsWithoutAnnots();
+    let numOrphanedAnnots = window.numAnnotsWithoutEggs();
+    let highlightDescrText = ''
+    if (numOrphanedEggs === 0 && numOrphanedAnnots === 0) {
+        highlightDescrText = 'Your annotations fully match our egg position data.';
+        document.getElementById('highlighting-disclaimer').setAttribute('hidden', true)
+    } else {
+        highlightDescrText = 'Highlighting ';
+        let eggDesc = 'eggs missing annotations';
+        
+        document.getElementById('highlighting-disclaimer').removeAttribute('hidden');
+        let annotDesc = 'annotations in areas without eggs (uncalled-for annotations)';
+        if (numOrphanedEggs > 0 && numOrphanedAnnots > 0) {
+            highlightDescrText += `${eggDesc} and ${annotDesc}`;
+        }
+        else if (numOrphanedEggs === 0) {
+            highlightDescrText += annotDesc;
+        }
+        else if (numOrphanedAnnots === 0) {
+            highlightDescrText += eggDesc;
+        }
+        highlightDescrText += '.';
+    }
+    document.getElementById('highlighting-desc').innerText = highlightDescrText;
+};
 function toggleAnnotationCheckMode() {
     document.getElementById('show_clicks_button').click();
+    window.updateHighlightingText();
 }
+
+
 function toggleMouseOver(buttonName) {
     window.blockPaperJsMouseEvents = true;
     document.getElementById(buttonName).focus();
@@ -54,7 +83,7 @@ function getDescriptionOfEggMismatches(numOrphanedEggs, numOrphanedAnnots, accur
             output += getVerb(isPlural)
         }
         output += `${numOrphanedAnnots} uncalled-for ${pluralize('annotation', isPlural)}` +
-            `${includeMaxima ?  ` (${accuracyThreshold} allowed)` : ''}`;
+            `${includeMaxima ? ` (${accuracyThreshold} allowed)` : ''}`;
     }
     if (output.length > 0) {
         output += '.'
@@ -93,6 +122,7 @@ function checkForClickDisagreement() {
         submitBlocked = true;
     } else if (atLeastOneCountOverThreshold) {
         document.getElementById('annotationCountWarningModalLabel').innerText = 'Error';
+        document.getElementById('annotationWarningDismissButton').innerText = 'OK';
         numWarningsShown = 0;
         submitBlocked = true;
         document.getElementById("egg-discrepancy-request").innerText = `Please correct your annotations.`;
@@ -110,6 +140,19 @@ document.getElementById("submit-from-modal").onclick = () => {
     submitBlocked = false;
     completeSubmit(true);
 };
+document.getElementById('report_bug_button').onclick = () => {
+    document.getElementById('show-bug-report-modal').click();
+    window.blockPaperJsKeyEvents = true;
+    document.getElementById('screenshot-preview').setAttribute('src', window.getCanvasDataUrl());
+    window.paperJsMouseMoveBlocker = document.addEventListener('mousemove', (event) => {
+        document.getElementById('bug-summary-input').focus();
+    })
+};
+document.getElementById('bugReportSubmit').onclick = () => {
+    window.parent.document.getElementById('bug-comments').value = document.getElementById('bug-summary-input').value;
+    window.parent.document.getElementById('bug-screenshot').value = window.getCanvasDataUrl();
+    window.parent.document.getElementById('hiddenSubmit').click();
+}
 var completeSubmit = function (skipChecks = false) {
     if (window.brushUnited) {
         document.getElementById("show-unfinished-annotations-modal").click();
@@ -125,6 +168,7 @@ var completeSubmit = function (skipChecks = false) {
         delete brush.brush;
         return brush;
     }));
+    // window.parent.document.getElementById('bug-comments').value = 'I was unable to add more than 70 egg annotations';
     window.parent.document.getElementById("hiddenSubmit").click();
 }
 document.getElementById("submitButton").onclick = function () {

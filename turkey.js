@@ -1,3 +1,4 @@
+import html2canvas from 'html2canvas';
 let simplifyjs = require('simplify-js');
 let randomColor = require('randomcolor');
 
@@ -74,6 +75,7 @@ let separatedBrushes;
 let backgroundRaster;
 let letPictureMove = false;
 window.blockPaperJsMouseEvents = false;
+window.blockPaperJsKeyEvents = false;
 let viewStyle;
 let viewStyleNum = 1;
 let viewStyles = ['fill', 'outline'];
@@ -206,7 +208,7 @@ var setBrushAppearance = function (color = activeColor) {
 var uniteCurrentAnnotation = function (newStroke) {
   history.push({ type: 'stroke', brush: window.brushUnited, color: activeColor });
   document.getElementById('undo_button').disabled = false;
-  if (history.length > 5) {
+  if (history.length > 10) {
     history.shift();
   }
   let newCompound = new paper.CompoundPath();
@@ -248,6 +250,10 @@ var uniteCurrentAnnotation = function (newStroke) {
   addHoverHandlers();
 };
 
+window.getCanvasDataUrl = function () {
+  return canvas.toDataURL();
+}
+
 function toggleDelete() {
   setDeleteMode(!getDeleteMode());
 }
@@ -282,6 +288,7 @@ var addHoverHandlers = function () {
           window.brushUnited = null;
         }
         refreshEggClickColors();
+        window.updateHighlightingText();
       }
     }
     myBrush.onMouseLeave = function () {
@@ -324,6 +331,9 @@ function toggleMode() {
 
 document.onkeydown = (e) => {
   var code = e.code;
+  if (window.blockPaperJsKeyEvents) {
+    return;
+  }
   if (code === 'KeyZ' && e.ctrlKey) {
     undo();
   }
@@ -359,6 +369,9 @@ var findEnclosedEgg = function (path) {
 
 var setKeyboardHandlers = () => {
   paper.view.on("keydown", function (evt) {
+    if (window.blockPaperJsKeyEvents) {
+      return;
+    }
     // Press E for "Mode toggle"
     if (evt.key == 'e') {
       toggleMode();
@@ -398,6 +411,7 @@ var setKeyboardHandlers = () => {
       activeColor = randomColor();
       window.brushUnited = null;
       refreshEggClickColors();
+      window.updateHighlightingText();
       updateGraphics();
     }
   }, true);
@@ -743,6 +757,7 @@ var toggleEggClickDisplay = function () {
   if (!window.gtClickPaths[0].visible) {
     document.getElementById('show_clicks_button').style.backgroundColor = '#0354ab';
     document.getElementById('check-annots-mode-text').removeAttribute('hidden');
+    window.updateHighlightingText();
   } else {
     document.getElementById('show_clicks_button').style.backgroundColor = '#007bff';
     document.getElementById('check-annots-mode-text').setAttribute('hidden', true);
@@ -750,6 +765,7 @@ var toggleEggClickDisplay = function () {
   window.gtClickPaths.forEach(path => {
     path.visible = !path.visible;
   });
+  window.updateHighlightingText();
   updateGraphics();
 }
 
@@ -807,6 +823,7 @@ function undo() {
   }
   restorePriorUnitedAnnotation(earlierState);
   refreshEggClickColors();
+  window.updateHighlightingText()
 }
 
 function capitalize(string) {
@@ -828,6 +845,10 @@ var start = function () {
     }
     document.getElementById('reposition_button').click();
   });
+  $(document).on('hidden.bs.modal', '#reportBugModal', () => {
+    window.blockPaperJsKeyEvents = false;
+    document.removeEventListener('mousemove', window.paperJsMouseMoveBlocker);
+  })
   myParent = document.getElementById("editorOuter");
   myChild = document.getElementById("editorInner");
   canvas = document.getElementById("myCanvas");
@@ -864,7 +885,6 @@ var start = function () {
     $('#instruction').slideDown(1000);
     instructionsShown = true;
   } else {
-    console.log('sliding up the instructions..');
     $('#instruction').slideUp(2);
     instructionsShown = false;
   }

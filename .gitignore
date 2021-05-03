@@ -8,3 +8,4 @@ egg_labels*
 labelled-data
 .vscode
 debug*
+setAmazonCreds.bat
