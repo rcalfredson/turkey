@@ -103,6 +103,11 @@
     margin-left: auto;
     margin-right: auto;
   }
+
+  #report_bug_button {
+    background-color: rgb(141, 34, 34);
+  }
+
   #reportBugModal .modal-dialog {
     width: 100%;
     max-width: 800px;
@@ -163,8 +168,16 @@
     border-spacing: 0 20px;
   }
 
+  #bug-summary-input-desc {
+    max-width: 600px;
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    padding-bottom: 10px;
+  }
+
   #bug-summary-input {
-    border-color:#4b5162;
+    border-color: #4b5162;
     padding: 10px;
     margin-left: auto;
     margin-right: auto;
@@ -176,10 +189,15 @@
 
   #screenshot-preview {
     max-width: 600px;
+    max-height: 300px;
     margin-left: auto;
     margin-right: auto;
     border: 1px solid #ccc;
     margin-bottom: 1rem;
+  }
+
+  .screenshot-text-explanation {
+    text-align: center;
   }
 
   table td,
@@ -244,27 +262,28 @@
         Are you sure you want to <strong>clear all annotations on this image</strong>?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">No, go back</button>
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">No</button>
         <button id="reset_button" data-dismiss="modal" type="button" class="btn btn-danger">Yes</button>
       </div>
     </div>
   </div>
 </div>
-<div class="modal fade" id="unfinishedAnnotationsModal" tabindex="-1" role="dialog"
-  aria-labelledby="unfinishedAnnotationsModalLabel" aria-hidden="true">
+<div class="modal fade" id="confirmSubmitModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="unfinishedAnnotationsModalLabel">Caution</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        Warning: there are unconfirmed annotations on the page. Please finish annotating before hitting submit.
+        Are you sure you want to submit your annotations and proceed to the next image?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal">Continue annotating</button>
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal"
+          onclick="document.getElementById('reposition_button').click();"
+          id='annotationWarningDismissButton'>No</button>
+        <button type="button" class="btn btn-primary submit-from-modal" data-dismiss="modal">Yes</button>
       </div>
     </div>
   </div>
@@ -286,7 +305,8 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal"
           id='annotationWarningDismissButton'>OK</button>
-        <button id='submit-from-modal' type="button" class="btn btn-primary" hidden data-dismiss="modal">Submit</button>
+        <button id="submit-inside-warning-modal" type="button" class="btn btn-primary submit-from-modal" hidden
+          data-dismiss="modal">Submit</button>
       </div>
     </div>
   </div>
@@ -302,17 +322,48 @@
         </button>
       </div>
       <div class="modal-body">
-        Please write a summary of the bug you encountered, including as much detail as desired. This report will be sent
-        to the developers, along with a screenshot of the app.<br>
-        Note: after submitting, it is not possible to continue annotating the current image.
+
       </div>
-      <div style="text-align: center;"><p>Preview of captured screenshot:</p></div>
+      <div style="text-align: center;">
+        <p>The following image will be included in your bug report:</p>
+      </div>
       <img id="screenshot-preview" src="">
-      <textarea id="bug-summary-input" rows="5" cols="95" placeholder="Write your summary here"></textarea>
+      <div id="bug-summary-input-desc"><span>Please describe the bug you encountered. Sorry for the issue and
+          thanks for your help in fixing it!</span></div>
+      <textarea id="bug-summary-input" rows="5" cols="95" placeholder="Bug description"></textarea>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal"
-          id='bugReportSubmit'>Submit</button>
-        <button id='submit-from-modal' type="button" class="btn btn-primary" hidden data-dismiss="modal">Submit</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" id='bugReportSubmit'>Submit</button>
+        <button type="button" class="btn btn-primary submit-from-modal" hidden data-dismiss="modal">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  var reportScriptLoadError = function () {
+    window.parent.document.getElementById('bug-comments').value = "Script encountered a loading error";
+    window.parent.document.getElementById('hiddenSubmit').click();
+  }
+</script>
+<div class="modal fade" id="scriptLoadErrorModal" tabindex="-1" role="dialog"
+  aria-labelledby="scriptLoadErrorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="scriptLoadErrorModalLabel">Error</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        The tool may not work because some part of it didn't load properly. Please refresh the page and try again. If
+        problems persist, try clearing your cache and logging in again, and if the tool still continues to fail, click
+        <i>Report</i>. We apologize for the inconvenience.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="reportScriptLoadError();"
+          id='scriptLoadErrorReportButton'>Report</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="location.reload()"
+          id='scriptLoadErrorRefreshButton'>Refresh</button>
       </div>
     </div>
   </div>
@@ -382,7 +433,7 @@
       <ul>
         <li>
           Larvae should not be annotated and can look similar to faint eggs. Larvae tend to be larger, and, unlike eggs,
-          can have a bent/wiggly shape and may have a darker area in the center. Here two pictures with larvae:<br>
+          can have a bent/wiggly shape and may have a darker area in the center. Here are two pictures with larvae:<br>
           <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/diff_oct30_11left_idx_157 snip2.jpg">
           <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/Oct30_11left snip2.jpg">
         </li>
@@ -408,8 +459,8 @@
           <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/diff_9_25_2020_img_0001_idx_202 snip.jpg">
         </li>
         <li>
-          When you annotate overlapping eggs, please try to estimate and annotate the full size of each egg. Here is an
-          example with annotations shown:<br>
+          When you annotate overlapping eggs, please try to estimate and annotate the <strong>full size of each
+            egg</strong>. Here is an example with annotations shown:<br>
           <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/segmentation with overlap.jpg">
         </li>
         <li>
@@ -426,45 +477,55 @@
         </li>
         <ul>
           <li>
-            Zoom in over an egg to make it relatively large (using mouse wheel), possibly dragging the image to make the
+            Zoom in over an egg to make it relatively large (using the mouse wheel), possibly dragging the image to make
+            the
             egg centered (use Shift + Left mouse button to drag)
           </li>
           <li>
-            Use left mouse button to "fill in" <em>all of</em> the egg area; when done, hit Enter to confirm the
-            annotation for the egg
+            Carefully move around the edge of the egg on the inside of the egg while holding the left mouse button to
+            "paint" (annotate), aiming to match the egg border well
+            <ul>
+              <li>
+                Here is an example with two annotated eggs, with annotation lines matching the egg borders well:<br>
+                <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/segmentation.png">
+              </li>
+              <li>
+                The annotation for the egg on the right is not confirmed yet and you can still add to it; the annotation
+                will be automatically confirmed in case you start a new annotation in a non-overlapping location
+              </li>
+              <li>
+                You can also manually confirm an annotation by pressing Enter, which can be useful for overlapping
+                eggs&mdash;we need eggs annotated <strong>individually</strong> since our goal is to teach our model to
+                count them
+              </li>
+              <li>
+                Ctrl+Z can be used to undo recent paintings in case you painted an area outside the egg; also, the brush
+                radius can be adjusted with a slider
+              </li>
+            </ul>
           </li>
-          <ul>
-            <li>Make sure the inside is fully filled</li>
-            <li>Ctrl+Z can be used to undo recent fills in case you filled an area outside the egg; also, the brush
-              radius can be adjusted with a slider</li>
-          </ul>
         </ul>
-        <li>
-          For overlapping eggs, Enter must be pressed after each egg&mdash;we need eggs annotated
-          <strong>individually</strong> since our goal is to teach our model to count them. For non-overlapping eggs,
-          several eggs can be annotated before pressing Enter.
-        </li>
         <li>
           When you have completed annotating an image, click <i>Default view</i> to manually review your annotations or
           <i>Check annotations</i>
+          <ul>
+            <li>
+              <i>Check annotations</i> compares your annotations against egg position data created by researchers in our
+              lab; note that your annotations may be more correct than this data, especially in difficult cases
+            </li>
+            <li>If your annotations seem correct, please click the <i>Submit</i> button</li>
+          </ul>
         </li>
-        <ul>
-          <li>
-            <i>Check annotations</i> compares your annotations against egg position data created by researchers in our
-            lab; note that your annotations may be more correct than this data, especially in difficult cases
-          </li>
-          <li>
-            If your annotations seem correct, please click the <i>Submit</i> button
-          </li>
-        </ul>
       </ul>
       <li>
         Additional notes
       </li>
       <ul>
         <li>
-          The other buttons and keyboard commands are likely best learned by trying them. E.g., instead of using Ctrl+Z
-          to undo the most recent annotation, you can toggle from Annotate to Delete mode and then delete any annotation
+          The other buttons and keyboard commands are likely best learned by trying them. E.g., instead of using
+          Ctrl+Z
+          to undo the most recent annotation, you can toggle from Annotate to Delete mode and then delete any
+          annotation
           you click on.
         </li>
       </ul>
@@ -489,11 +550,12 @@
       <input class="btn btn-primary mr-1" id="reposition_button" type="button" value="Default view" />
       <input class="btn btn-primary mr-1" id="show_clicks_button" type="button" value="Check annotations" />
       <input class="btn btn-primary mr-1" type="button" id="submitButton" value="Submit" />
-      <input hidden data-toggle="modal" data-target="#unfinishedAnnotationsModal" type=button
-        id="show-unfinished-annotations-modal" />
       <input hidden data-toggle="modal" data-target="#annotationCountWarningModal" type=button
         id="show-annotation-count-warning-modal" />
       <input hidden data-toggle="modal" data-target="#reportBugModal" type=button id="show-bug-report-modal" />
+      <input hidden data-toggle="modal" data-target="#scriptLoadErrorModal" type=button
+        id="show-script-load-error-modal" />
+      <input hidden data-toggle="modal" data-target="#confirmSubmitModal" type=button id="show-confirm-submit-modal" />
     </div>
     <div hidden id="object-class-wrapper">
       <label for="object-class">Category</label>
@@ -512,12 +574,12 @@
       <div class="slider-and-label">
         <label for="brush_rad_slider" style="display: table-cell;">Brush radius</label>
         <input type="text" data-slider-id="brush_rad_slider" data-slider-value="3" data-slider-min="1"
-          data-slider-step="1" data-slider-max="15" id="brush_rad_slider" />
+          data-slider-step="0.5" data-slider-max="5" id="brush_rad_slider" />
       </div>
     </div>
     <div style="flex-grow: 1;" class="half-spacer"></div>
     <div class="btn-group-vertical">
-      <input class="btn btn-primary" type="button" id="report_bug_button" value="Report Bug" />
+      <input class="btn btn-primary" type="button" id="report_bug_button" value="Report bug" />
     </div>
   </aside>
   <aside id="right-panel"></aside>
@@ -542,7 +604,7 @@
       </tr>
       <tr>
         <td>Enter</td>
-        <td>Confirm annotation(s)</td>
+        <td>Confirm annotation</td>
       </tr>
       <tr>
         <td>D</td>
@@ -556,7 +618,7 @@
   </div>
   <div hidden id="check-annots-mode-text">
     <span id="highlighting-desc"></span>
-    <div class="toggle-button-parent"><span style="padding-left: 15px;">(</span>
+    <div id="check-mode-toggle-parent" class="toggle-button-parent"><span style="padding-left: 15px;">(</span>
       <a class="toggle-button" id="check-mode-toggle-text">turn off</a>
       <span>)</span>
     </div><br>

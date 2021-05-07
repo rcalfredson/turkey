@@ -51,9 +51,10 @@ let brush = {
   pathOptions: {
     strokeColor: 'white',
     strokeWidth: 3,
-    radius: 3
+    radius: 2
   }
 }
+let brushStrokeStartPoint;
 let colors = {
   cautionYellow: new paper.Color(0.984, 1.0, 0),
 
@@ -76,11 +77,13 @@ let backgroundRaster;
 let letPictureMove = false;
 window.blockPaperJsMouseEvents = false;
 window.blockPaperJsKeyEvents = false;
+let blockDraw = false;
 let viewStyle;
 let viewStyleNum = 1;
 let viewStyles = ['fill', 'outline'];
 window.oldBrushes = {};
 let paperJstoTimeIds = {};
+window.scriptLoadStatuses = { turkey: false, helpers: false };
 let imageOffset;
 let firstResize = true;
 window.annotations = null;
@@ -239,6 +242,7 @@ var uniteCurrentAnnotation = function (newStroke) {
   setBrushAppearance();
   window.brushUnited.selected = true;
   pointsUnited = []
+  window.brushUnited.removeChildren(1);
   window.brushUnited.children.forEach(path => {
     let points = [];
     path.segments.forEach(seg => {
@@ -251,7 +255,7 @@ var uniteCurrentAnnotation = function (newStroke) {
 };
 
 window.getCanvasDataUrl = function () {
-  return canvas.toDataURL();
+  return canvas.toDataURL('image/jpeg');
 }
 
 function toggleDelete() {
@@ -383,38 +387,42 @@ var setKeyboardHandlers = () => {
     }
 
     if (evt.key == 'enter' && mode == 'brush') {
-      let brushId;
-
-      createSeparateCompoundPathsForEachChild();
-      let brushIds = []
-      for (let index = 0; index < pointsUnited.length; index++) {
-        brushId = makeID(6);
-        if (index > 0) {
-          activeColor = randomColor();
-        }
-        window.oldBrushes[brushId] = {
-          class: getClass(),
-          color: activeColor,
-          brush: separatedBrushes[index],
-          points: [pointsUnited[index]],
-          id: brushId,
-          enclosedEgg: findEnclosedEgg(separatedBrushes[index]),
-          finished: true
-        };
-        paperJstoTimeIds[separatedBrushes[index].id] = brushId;
-        brushIds.push(brushId)
-      }
-      addHoverHandlers();
-      window.brushUnited.remove();
-      separatedBrushes = [];
-      history.push({ type: 'annotation', color: activeColor, ids: brushIds, brush: window.brushUnited });
-      activeColor = randomColor();
-      window.brushUnited = null;
-      refreshEggClickColors();
-      window.updateHighlightingText();
-      updateGraphics();
+      window.confirmDrawnShapes();
     }
   }, true);
+}
+
+window.confirmDrawnShapes = () => {
+  let brushId;
+
+  createSeparateCompoundPathsForEachChild();
+  let brushIds = []
+  for (let index = 0; index < pointsUnited.length; index++) {
+    brushId = makeID(6);
+    if (index > 0) {
+      activeColor = randomColor();
+    }
+    window.oldBrushes[brushId] = {
+      class: getClass(),
+      color: activeColor,
+      brush: separatedBrushes[index],
+      points: [pointsUnited[index]],
+      id: brushId,
+      enclosedEgg: findEnclosedEgg(separatedBrushes[index]),
+      finished: true
+    };
+    paperJstoTimeIds[separatedBrushes[index].id] = brushId;
+    brushIds.push(brushId)
+  }
+  addHoverHandlers();
+  window.brushUnited.remove();
+  separatedBrushes = [];
+  history.push({ type: 'annotation', color: activeColor, ids: brushIds, brush: window.brushUnited });
+  activeColor = randomColor();
+  window.brushUnited = null;
+  refreshEggClickColors();
+  window.updateHighlightingText();
+  updateGraphics();
 }
 
 var changeZoom = (delta, p) => {
@@ -428,6 +436,13 @@ var changeZoom = (delta, p) => {
   let a = p.subtract(pc.multiply(beta)).subtract(c);
 
   return { zoom: zoomTemp, offset: a };
+}
+
+function reposition() {
+  paper.view.zoom = 1;
+  paper.view.center = origCenter;
+  newScale = 1;
+  scale();
 }
 
 var zoomInAndOut = e => {
@@ -508,12 +523,18 @@ var setPointerHandlers = () => {
   window.addEventListener('pointerdown', function (evt) {
     rightClick = evt.which == 3;
   });
-  paper.view.on('mousedown', function () {
+  paper.view.on('mousedown', function (evt) {
     if (window.blockPaperJsMouseEvents) {
       return;
     }
     pointerDown = true;
     if (mode == 'brush' && !delete_mode && !rightClick && !shiftKeyDown) {
+      if (brushStrokeStartPoint) brushStrokeStartPoint.remove();
+      brushStrokeStartPoint = brush.path.clone();
+      brushStrokeStartPoint.visible = false;
+      if (blockDraw) {
+        return;
+      }
       createSelection();
       draw();
     }
@@ -603,9 +624,20 @@ var setMouseMoveHandler = () => {
     }
     document.activeElement.blur();
     if (mode == 'brush' && !delete_mode) {
+      if (brush.path && !brush.path.isInside(backgroundRaster.bounds)) {
+        brush.path.strokeColor = new paper.Color(0.553, 0.133, 0.133);
+        blockDraw = true;
+      } else {
+        if (brush.path) {
+          brush.path.strokeColor = brush.pathOptions.strokeColor;
+        }
+        blockDraw = false;
+      }
       if (pointerDown && !rightClick && !shiftKeyDown && !dragStart) {
         moveBrush(evt);
-        draw();
+        if (!blockDraw) {
+          draw();
+        }
       } else {
         moveBrush(evt);
       }
@@ -650,6 +682,12 @@ var removeSelection = function () {
 }
 
 var draw = function () {
+  let lastPathUnconfirmed = Boolean(window.brushUnited);
+  if (lastPathUnconfirmed && !window.brushUnited.intersects(brushStrokeStartPoint)) {
+    if (!window.brushUnited.intersects(brush.path)) {
+      window.confirmDrawnShapes();
+    }
+  }
   let newSelection = brushStroke.unite(brush.path);
 
   brushStroke.remove();
@@ -709,8 +747,6 @@ var loadEggClicksData = function () {
   checkForDataURL(urlAdded);
 }
 
-
-
 var drawEggClicksOnCanvas = function () {
   window.gtClickData.forEach((click) => {
     let center = new paper.Point(click[0] * backgroundRaster.scaling.x + imageOffset.x,
@@ -757,6 +793,7 @@ var toggleEggClickDisplay = function () {
   if (!window.gtClickPaths[0].visible) {
     document.getElementById('show_clicks_button').style.backgroundColor = '#0354ab';
     document.getElementById('check-annots-mode-text').removeAttribute('hidden');
+    reposition();
     window.updateHighlightingText();
   } else {
     document.getElementById('show_clicks_button').style.backgroundColor = '#007bff';
@@ -838,7 +875,39 @@ function updateInstructionText() {
   }
 }
 
+function checkScriptLoadStatuses() {
+  if (Object.keys(window.scriptLoadStatuses).some(k => !scriptLoadStatuses[k])) {
+    document.getElementById('show-script-load-error-modal').click();
+  }
+}
+
+window.getBoundsOfEggLayingArea = function () {
+  let { translation, scaling } = backgroundRaster.viewMatrix;
+  let bounds = backgroundRaster.internalBounds;
+  let canvas = document.getElementById('myCanvas');
+  let x1 = translation.x - 0.5 * bounds.width * scaling.x;
+  let y1 = translation.y - 0.5 * bounds.height * scaling.y;
+  let x2 = translation.x + 0.5 * bounds.width * scaling.x;
+  let y2 = translation.y + 0.5 * bounds.height * scaling.y;
+  if (x1 < 0) {
+    x1 = 0;
+  }
+  if (y1 < 0) {
+    y1 = 0;
+  }
+  if (x2 > canvas.width) {
+    x2 = canvas.width;
+  }
+  if (y2 > canvas.height) {
+    y2 = canvas.height;
+  }
+  return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+};
+
 var start = function () {
+  setTimeout(() => {
+    checkScriptLoadStatuses();
+  }, 10000);
   $(document).on('hidden.bs.modal', '#annotationCountWarningModal', function () {
     if (window.gtClickPaths.length > 0 && !window.gtClickPaths[0].visible) {
       document.getElementById('show_clicks_button').click();
@@ -999,13 +1068,6 @@ var start = function () {
     setDeleteMode(false);
   }
 
-  function reposition() {
-    paper.view.zoom = 1;
-    paper.view.center = origCenter;
-    newScale = 1;
-    scale();
-  }
-
   function clearAnnotations() {
     Object.values(window.oldBrushes).forEach(brush => {
       brush.brush.remove();
@@ -1016,6 +1078,7 @@ var start = function () {
       window.brushUnited = null;
     }
   }
+  window.scriptLoadStatuses.turkey = true;
 }
 
 start();

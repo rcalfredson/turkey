@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node minifyAppHtml.js && node transformScript.js turkey.js && uglifyjs bundleTurkey.js > bundle.min.js && node transformScript helpers.js | uglifyjs bundleHelpers.js > bundleHelpers.min.js",
+    "build": "node minifyAppHtml.js && node transformScript.js turkey.js && uglifyjs bundleTurkey.js > bundle.min.js && node transformScript helpers.js && uglifyjs bundleHelpers.js > bundleHelpers.min.js",
     "build-dev": "node minifyAppHtml.js --dev && node transformScript.js turkey.js --dev && uglifyjs bundleTurkeyDev.js > bundleDev.min.js && node transformScript.js helpers.js --dev && uglifyjs bundleHelpersDev.js > bundleHelpersDev.min.js",
     "pretest": "eslint turkey.js"
   },

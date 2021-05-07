@@ -1,0 +1,83 @@
+<li>primary goals</li>
+<ul>
+<li>continue updates to the egg segmentation tool</li>
+<ul>
+<li>ensure that if a new annotation is begun outside the border of an existing one, then the latter annotation gets confirmed, i.e., closed.</li>
+<li>implement means to detect whether the segmentation script has fully loaded and display a message to the user otherwise, asking them to close the task, perhaps refresh the page?</li>
+<ul>
+<li>not sure which instruction is most fitting, but the main idea is to inform them there is a problem with the current app</li>
+</ul>
+<li>don't think there were any other changes to the tool, but need to discuss with Dorsa and Uli</li>
+</ul>
+<li>carried over from yesterday: find the best nets from each experiment, and then find the worst images from each of those best nets</li>
+<ul>
+<li>see notes from 3 May for more complete details </li>
+</ul>
+</ul>
+<li>general notes</li>
+<ul>
+<li>step 1: continue updates to egg segmentation tool</li>
+<ul>
+<li>step 1.1: determine why the initial click of a brushstroke <em>inside</em> an existing annotation is being detected as the opposite &lt;- done</li>
+<ul>
+<li>this is important because an existing egg shape is to be closed only when the follow brushstroke falls outside its bounds</li>
+<li>most likely the reason this test fails is that the click has a different coordinate system than the shape? &lt;- actually, the reason was that I hadn't actually assigned the point corresponding to the new brushstroke's first click to the proper variable. This feature is actually now working!</li>
+</ul>
+<li>all features discussed yesterday are now complete, with the only remaining change being the app's ability to detect its failure to load.</li>
+<li>step 1.2: determine whether an early return during the function that loads the annotation app is sufficient to replicate the problem Dorsa and I observed on Friday, namely, the ability to draw, but not to delete (or amend?)</li>
+<ul>
+<li>added early return after "setMouseMoveHandler" but before "setPointerHandlers," and no image appeared.</li>
+<li>the correct place for the early return is somehwere far enough into the app's loading that the brush outlines get changed into "prospective" egg shapes, but before they are allowed to get completed. Also, the function that sets up the onhover and onclick handlers related to the delete action need to be absent.</li>
+<li>the handlers for a delete action get added to shapes in three different places:</li>
+<ul>
+<li>restoring a shape from the "undo" chain</li>
+<li>uniting the paths of two current annotations</li>
+<li>upon hitting enter to close shapes</li>
+</ul>
+<li>it would only take an error in one of those three places for the delete function to stop working for at least one shape.</li>
+<ul>
+<li>the error message I saw in Dorsa's concole is consistent with an error in the "hit error" path, because the error occurred in function createSeparateCompoundPathsForEachChild(). How to create an error there?</li>
+<ul>
+<li>earlier, the error stemmed from brushUnited having no children; under what conditions can this happen? &lt;- Actually, now that the handling of brushstrokes has changed so much across the changes from yesterday and today, it might not be possible (and could be unwise) to try replicating the problem from Friday. Just quickly focus on adding the</li>
+</ul>
+</ul>
+</ul>
+</ul>
+<li>spend small amount of time trying to troubleshoot Ubuntu machine frozen on login screen</li>
+<ul>
+<li>first idea: find potential process monopolizing resources</li>
+<ul>
+<li>which Unix command may provide a way to view nonresponsive processes?</li>
+<li>looking at output of <strong>top</strong>, no process is monopolizing resources. The process closest to the top is VS Code (my preferred code editor), and even that is using only slightly over 1% of CPU.</li>
+<li>tried using <a href="https://unix.stackexchange.com/a/248527">this command</a> (ps aux | awk '{if ($8 ="D") print}') to identify processes that are stuck in a non-responsive state, and found one interesting entry related to the VS Code, and suggesting it was trying to use the GPU?</li>
+<li>/snap/code/62/usr/share/code/code --type=gpu-process --field-trial-handle=9541590032594500762,6150545518477960774,131072 --enable-features=WebComponentsV0Enabled --disable-features=CookiesWithoutSameSiteMustBeSecure,SameSiteByDefaultCookies,SpareRendererForSitePerProcess --disable-color-correct-rendering --no-sandbox --enable-crash-reporter=5d636184-010b-43c4-a00c-7843b8e8085b,no_channel --global-crash-keys=5d636184-010b-43c4-a00c-7843b8e8085b,no_channel,_companyName=Microsoft,_productName=VSCode,_version=1.55.2 --gpu-preferences=OAAAAAAAAAAgAAAQAAAAAAAAAAAAAAAAAABgAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA== --shared-files</li>
+<li>curious to determine the effect of killing just this process. &lt;- no effect</li>
+<li>tried using the command Ctrl + Alt + F1, which had the effect of restoring the original login screen. I clicked on user Tracking and logged in, which resulted in a completely black screen with only the cursor visible.</li>
+<li>Ctrl + Alt + F__ allows access to the system's different terminals, apparently. F1 goes to the login page, F2 goes to the above-mentioned page that is blank other than the cursor, F3 through F6 go to different TTY login screens, and F7 goes to a log showing evidence of some type of file audit. The message displayed is one very similar to those described in <a href="https://answers.launchpad.net/ubuntu/+question/688667">this forum post</a>, namely:&nbsp;/dev/nvme0n1pd: clean, 5051807/31227904 files, 51943395/124895488 blocks</li>
+<li>found a segmentation fault in /var/log/kern.log:&nbsp;<br>
+<p>May&nbsp; 4 14:36:47 Yang-Lab-Dell8 kernel: [708333.760562] code[783759]: segfault at c ip 00007f85c68ea70d sp 00007ffd55e82f38 error 6 in libnvidia-glcore.so.460.73.01[7f85c59a1000+1192000]</p><br>
+<p>May&nbsp; 4 14:36:47 Yang-Lab-Dell8 kernel: [708333.760565] Code: 33 02 00 85 c0 75 b4 eb c0 0f 1f 40 00 e9 8b aa f3 ff 66 2e 0f 1f 84 00 00 00 00 00 90 48 b8 6e 0e 05 a0 04 00 00 00 83 c2 30 &lt;89&gt; 4e 0c 48 89 46 04 8b 44 24 08 c1 e2 12 81 ca 00 0e 00 80 44 89</p>
+</li>
+<ul>
+<ul>
+<li>however, I think this is <span style="text-decoration: underline;">not</span>&nbsp;the source of the problem because it happened after I started my debugging efforts. It seems most likely the problem above is actually a consequence of my trying to kill the process created by VS Code that was using the GPU for some reason. Other than that error message, there aren't any other red flags in the file.</li>
+</ul>
+</ul>
+<li>trying the command recommended <a href="https://askubuntu.com/a/1155647">here</a>:&nbsp;<span style="color: #242729; font-family: Consolas, Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace, sans-serif; background-color: #e4e6e8;">sudo ubuntu-drivers autoinstall</span></li>
+<ul>
+<li>result: unable to correct probems, you have held broken packages.</li>
+<li>two drivers identified with unmet dependencies:&nbsp;nvidia-dkms-465 and&nbsp;nvidia-driver-465</li>
+<ul>
+<li>try installing the packages that these apparently depend on (a total of 11 of them)</li>
+<li>upon attempt to install the first of these missing dependencies (nvidia-kernel-common-465), the log messages indicated CUDA might have gotten uninstalled as part of the setup. However, this doesn't appear to be the case in practice, because I was still able to import torch and define a tensor on CUDA, fortunately.&nbsp;</li>
+</ul>
+<li>try installing the remaining of prereq packages for the ubuntu-drivers command &lt;- remaining packages were able to be installed with no problem, and the ubuntu-drivers installation also finished successfully.</li>
+</ul>
+<li>after this, is there any way to recover the system short of rebooting it? and how can I know whether the changes I made protect it against hang-ups in the future?</li>
+<li>the actions above didn't help the system recover from its currently dysfunctional state, at least: there remains a black screen after trying to login as user Tracking.</li>
+<li>however, I was able to log in as user Robert. Last step I want to try is logging out Tracking from the command line and then logging back in.</li>
+<li>used command who -u to get the PID of the tracking user's login session, and then ran "kill $TRACKING_USER_PID"</li>
+<li>after that, I was able to log into the Tracking user's account, and interestingly, the system didn't act as if this was a fresh login. After I entered the Tracking password, the lock screen (with time in middle of screen) was displayed, and I had to log in once more. Afterward, the desktop appeared, with an error message indicating that the "Files" application (i.e., its file browser) had closed unexpectedly. I take this as evidence that the Tracking user was never actually fully logged out, interestingly.</li>
+<li>in short, it turns out it was possible to recover the machine without having to reboot it (although later on it will probably still need a reboot to finish setting up the new drivers that were installed above).</li>
+<li>as noted above, there is no guarantee that the driver installation described above will prevent this type of hang-up from recurring moving forward. I also don't know what caused the problem in the first place. Consequently, it's clear if there was any benefit in being able to recover the machine without having to reboot it, but at least I tried and succeeded at that goal.</li>
+<li>&nbsp;</li>
