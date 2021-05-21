@@ -105,7 +105,7 @@ function checkForClickDisagreement() {
     } else if (numEggs > 10 && numEggs < 41) {
         accuracyThreshold = 2;
     } else {
-        accuracyThreshold = Math.round(numEggs * 0.05);
+        accuracyThreshold = Math.ceil(numEggs * 0.05);
     }
     let numOrphanedEggs = window.numEggsWithoutAnnots();
     let numOrphanedAnnots = window.numAnnotsWithoutEggs();

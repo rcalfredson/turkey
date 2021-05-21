@@ -242,7 +242,17 @@ var uniteCurrentAnnotation = function (newStroke) {
   setBrushAppearance();
   window.brushUnited.selected = true;
   pointsUnited = []
-  window.brushUnited.removeChildren(1);
+  if (window.brushUnited.children.length > 1 &&
+    window.brushUnited.children[1].bounds.area >
+    window.brushUnited.children[0].bounds.area) {
+    let tempCompound = new paper.CompoundPath(window.brushUnited.children[1]);
+    window.brushUnited.remove();
+    window.brushUnited = tempCompound.clone();
+    window.brushUnited.selected = true;
+    tempCompound.remove();
+  } else {
+    window.brushUnited.removeChildren(1);
+  }
   window.brushUnited.children.forEach(path => {
     let points = [];
     path.segments.forEach(seg => {
@@ -397,8 +407,26 @@ window.confirmDrawnShapes = () => {
 
   createSeparateCompoundPathsForEachChild();
   let brushIds = []
+  let trueImgBounds = new paper.Rectangle(0, 0,
+    backgroundRaster.width * backgroundRaster.scaling.x,
+    backgroundRaster.height * backgroundRaster.scaling.y
+  );
   for (let index = 0; index < pointsUnited.length; index++) {
     brushId = makeID(6);
+    let keepBrush = true;
+    pointsUnited[index].some((pt, i) => {
+      if (i % 2 === 1) {
+        return false;
+      }
+      let ptChecked = new paper.Point(pt, pointsUnited[index][i + 1])
+      if (!ptChecked.isInside(trueImgBounds)) {
+        keepBrush = false;
+      }
+      return !keepBrush;
+    });
+    if (!keepBrush) {
+      continue;
+    }
     if (index > 0) {
       activeColor = randomColor();
     }
@@ -482,7 +510,8 @@ var scale = () => {
 function updateGraphics() {
   Object.values(window.oldBrushes).forEach(brush => {
     let brushColor, strokeColor;
-    let isFlagged = window.gtClickPaths[0].visible && !Number.isInteger(brush.enclosedEgg);
+    let isFlagged = window.gtClickPaths.length > 0 &&
+      window.gtClickPaths[0].visible && !Number.isInteger(brush.enclosedEgg);
     if (isFlagged) {
       brushColor = colors.cautionYellow.clone();
       strokeColor = colors.cautionYellow.clone();
@@ -625,12 +654,8 @@ var setMouseMoveHandler = () => {
     document.activeElement.blur();
     if (mode == 'brush' && !delete_mode) {
       if (brush.path && !brush.path.isInside(backgroundRaster.bounds)) {
-        brush.path.strokeColor = new paper.Color(0.553, 0.133, 0.133);
         blockDraw = true;
       } else {
-        if (brush.path) {
-          brush.path.strokeColor = brush.pathOptions.strokeColor;
-        }
         blockDraw = false;
       }
       if (pointerDown && !rightClick && !shiftKeyDown && !dragStart) {
@@ -683,10 +708,10 @@ var removeSelection = function () {
 
 var draw = function () {
   let lastPathUnconfirmed = Boolean(window.brushUnited);
-  if (lastPathUnconfirmed && !window.brushUnited.intersects(brushStrokeStartPoint)) {
-    if (!window.brushUnited.intersects(brush.path)) {
-      window.confirmDrawnShapes();
-    }
+  if (lastPathUnconfirmed &&
+    !window.brushUnited.bounds.contains(brushStrokeStartPoint.bounds)
+    && !window.brushUnited.intersects(brushStrokeStartPoint)) {
+    window.confirmDrawnShapes();
   }
   let newSelection = brushStroke.unite(brush.path);
 
