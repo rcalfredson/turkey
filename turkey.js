@@ -45,6 +45,7 @@ var modeNum = 0;
 var editing_mode = 'annotate';
 var timeDownUp = null;
 var shiftKeyDown = false;
+var altKeyDown = false;
 var rightClick = false;
 let lastScrollTime;
 let brush = {
@@ -350,11 +351,17 @@ document.onkeydown = (e) => {
   if (e.key === 'Shift') {
     shiftKeyDown = true;
   }
+  if (e.key === 'Alt') {
+    altKeyDown = true;
+  }
 }
 
 document.onkeyup = (e) => {
   if (e.key === 'Shift') {
     shiftKeyDown = false;
+  }
+  if (e.key === 'Alt') {
+    altKeyDown = false;
   }
 }
 
@@ -557,6 +564,9 @@ var setPointerHandlers = () => {
       return;
     }
     pointerDown = true;
+    if (editing_mode === 'annotate' && altKeyDown) {
+      editing_mode = 'erase';
+    }
     if (mode == 'brush' && editing_mode !== 'delete' && !rightClick && !shiftKeyDown) {
       if (editing_mode === 'annotate') {
         if (brushStrokeStartPoint) brushStrokeStartPoint.remove();
@@ -591,6 +601,9 @@ var setPointerHandlers = () => {
       } else if (editing_mode === 'erase') {
         action = 'intersect';
       }
+      if (editing_mode === 'erase') {
+        editing_mode = 'annotate';
+      }
       updateCurrentAnnotation(brushStroke, action);
       removeSelection();
     }
@@ -623,7 +636,6 @@ function setAnnotateMode(mode) {
     console.log('updating buttons for annotate click');
     canvas.style.cursor = "none";
     makeButtonSecondary('delete_button');
-    makeButtonSecondary('erase_button');
 
     makeButtonPrimary('annotate_button');
     createBrush();
@@ -636,7 +648,6 @@ function setAnnotateMode(mode) {
     }
     canvas.style.cursor = "pointer";
     makeButtonSecondary('annotate_button');
-    makeButtonSecondary('erase_button');
 
     makeButtonPrimary('delete_button');
     updateGraphics();
@@ -1117,9 +1128,6 @@ var start = function () {
   $("#delete_button").click(() => {
     setAnnotateMode('delete');
   });
-  $('#erase_button').click(() => {
-    setAnnotateMode('erase');
-  })
   $("#annotate_button").click(() => {
     setAnnotateMode('annotate');
   });

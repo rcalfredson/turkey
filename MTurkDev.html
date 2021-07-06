@@ -640,10 +640,9 @@
 '      <button type="button" class="btn btn-primary instructions-toggle">Instructions</button>' +
 '      <input class="btn btn-primary mr-1" id="view_button" type="button" value="View style: fill">' +
 '      <input hidden class="btn btn-primary mr-1" id="mode_button" type="button" value="Dot Mode">' +
-'      <input class="btn btn-primary mr-1" id="annotate_button" type="button" autocomplete="off" value="Annotate">' +
-'      <span id="delete_flip" class="btn-group mr-1" data-toggle="buttons">' +
-'        <input class="btn btn-outline-secondary" type="button" id="delete_button" value="Delete">' +
-'        <input class="btn btn-outline-secondary" type="button" id="erase_button" value="Erase"></span>' +
+'      <span id="delete_flip" class="btn-group btn-group-toggle mr-1" data-toggle="buttons">' +
+'        <label class="btn btn-outline-secondary" type="radio" name="options" id="delete_button" autocomplete="off" checked="checked">Delete</label>' +
+'        <label class="btn btn-primary" type="radio" name="options" id="annotate_button" autocomplete="off">Annotate</label></span>' +
 '      <input hidden aria-h class="btn btn-primary" id="undo_button" type="button" value="Undo">' +
 '      <input class="btn btn-primary mr-1" data-toggle="modal" data-target="#clearAnnotationsModal" type="button" value="Clear annotations">' +
 '      <input class="btn btn-primary mr-1" id="reposition_button" type="button" value="Default view">' +
@@ -694,6 +693,10 @@
 '        <td>Drag image</td>' +
 '      </tr>' +
 '      <tr>' +
+'        <td>Alt + Left button</td>' +
+'        <td>Select area to erase from currently active egg</td>' +
+'      </tr>' +
+'      <tr>' +
 '        <td>Scroll wheel</td>' +
 '        <td>Zoom</td>' +
 '      </tr>' +
@@ -724,6 +727,7 @@
 '    <canvas id="myCanvas" keepalive="true"></canvas>' +
 '    <img id="pic" src="{{ task.input.taskObject | grant_read_access }}" crossorigin="anonymous">' +
 '    <span hidden id="click-json-url"></span>' +
+'    <span hidden id="outline-json-url"></span>' +
 '  </div>' +
 '</div>' +
 '<script id="turkey" type="text/javascript" src="https://egg-laying.s3.us-east-2.amazonaws.com/assets/bundleDev.min.js"></sc' +
