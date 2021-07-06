@@ -42,7 +42,7 @@ var newScale = 1.0;
 var zoom = 1.0;
 var mode = "";
 var modeNum = 0;
-var delete_mode = false;
+var editing_mode = 'annotate';
 var timeDownUp = null;
 var shiftKeyDown = false;
 var rightClick = false;
@@ -77,7 +77,7 @@ let backgroundRaster;
 let letPictureMove = false;
 window.blockPaperJsMouseEvents = false;
 window.blockPaperJsKeyEvents = false;
-let blockDraw = false;
+let blockEdit = false;
 let viewStyle;
 let viewStyleNum = 1;
 let viewStyles = ['fill', 'outline'];
@@ -208,7 +208,7 @@ var setBrushAppearance = function (color = activeColor) {
   }
 }
 
-var uniteCurrentAnnotation = function (newStroke) {
+var updateCurrentAnnotation = function (newStroke, action) {
   history.push({ type: 'stroke', brush: window.brushUnited, color: activeColor });
   document.getElementById('undo_button').disabled = false;
   if (history.length > 10) {
@@ -216,9 +216,9 @@ var uniteCurrentAnnotation = function (newStroke) {
   }
   let newCompound = new paper.CompoundPath();
   if (window.brushUnited instanceof paper.CompoundPath) {
-    newCompound = window.brushUnited.unite(newStroke);
+    newCompound = window.brushUnited[action](newStroke);
   } else {
-    newCompound = newCompound.unite(newStroke);
+    newCompound = newCompound[action](newStroke);
   }
   if (newCompound instanceof paper.Path) {
     newCompound = new paper.CompoundPath(newCompound);
@@ -239,7 +239,6 @@ var uniteCurrentAnnotation = function (newStroke) {
     window.brushUnited.remove();
   }
   window.brushUnited = newCompound;
-  setBrushAppearance();
   window.brushUnited.selected = true;
   pointsUnited = []
   if (window.brushUnited.children.length > 1 &&
@@ -253,6 +252,7 @@ var uniteCurrentAnnotation = function (newStroke) {
   } else {
     window.brushUnited.removeChildren(1);
   }
+  setBrushAppearance();
   window.brushUnited.children.forEach(path => {
     let points = [];
     path.segments.forEach(seg => {
@@ -268,10 +268,6 @@ window.getCanvasDataUrl = function () {
   return canvas.toDataURL('image/jpeg');
 }
 
-function toggleDelete() {
-  setDeleteMode(!getDeleteMode());
-}
-
 function getClass() {
   return classSelection[classSelection.selectedIndex].innerHTML;
 }
@@ -285,14 +281,14 @@ var addHoverHandlers = function () {
       myBrush = myBrush.brush;
     }
     myBrush.onMouseEnter = function () {
-      if (delete_mode && myBrush !== null) {
+      if (editing_mode === 'delete' && myBrush !== null) {
         myBrush.normalFillColor = myBrush.fillColor;
         myBrush.fillColor = 'red';
         myBrush.opacity = opacity_level;
       }
     }
     myBrush.onClick = function () {
-      if (delete_mode) {
+      if (editing_mode === 'delete') {
         if (Object.keys(paperJstoTimeIds).includes(this.id.toString())) {
           window.oldBrushes[paperJstoTimeIds[this.id]].brush.remove();
           delete window.oldBrushes[paperJstoTimeIds[this.id]];
@@ -393,7 +389,11 @@ var setKeyboardHandlers = () => {
 
     // Press D for "Delete"
     if ((evt.key == 'd')) {
-      toggleDelete();
+      if (editing_mode === 'delete') {
+        setAnnotateMode('annotate');
+      } else {
+        setAnnotateMode('delete');
+      }
     }
 
     if (evt.key == 'enter' && mode == 'brush') {
@@ -557,15 +557,24 @@ var setPointerHandlers = () => {
       return;
     }
     pointerDown = true;
-    if (mode == 'brush' && !delete_mode && !rightClick && !shiftKeyDown) {
-      if (brushStrokeStartPoint) brushStrokeStartPoint.remove();
-      brushStrokeStartPoint = brush.path.clone();
-      brushStrokeStartPoint.visible = false;
-      if (blockDraw) {
-        return;
+    if (mode == 'brush' && editing_mode !== 'delete' && !rightClick && !shiftKeyDown) {
+      if (editing_mode === 'annotate') {
+        if (brushStrokeStartPoint) brushStrokeStartPoint.remove();
+        brushStrokeStartPoint = brush.path.clone();
+        brushStrokeStartPoint.visible = false;
+        if (blockEdit) {
+          return;
+        }
+        createSelection();
+        draw();
+      } else if (editing_mode === 'erase') {
+        if (window.brushUnited) {
+          brushStroke = window.brushUnited.clone();
+          brushStroke.opacity = opacity_level;
+          window.brushUnited.opacity = 0;
+          erase();
+        }
       }
-      createSelection();
-      draw();
     }
     timeDownUp = new Date().getTime();
     if (shiftKeyDown) {
@@ -575,8 +584,14 @@ var setPointerHandlers = () => {
   paper.view.on('mouseup', function () {
     pointerDown = false;
     timeDownUp = new Date().getTime();
-    if (mode == 'brush' && !delete_mode && !rightClick && !shiftKeyDown) {
-      uniteCurrentAnnotation(brushStroke);
+    if (mode == 'brush' && editing_mode !== 'delete' && !rightClick && !shiftKeyDown) {
+      let action;
+      if (editing_mode === 'annotate') {
+        action = 'unite';
+      } else if (editing_mode === 'erase') {
+        action = 'intersect';
+      }
+      updateCurrentAnnotation(brushStroke, action);
       removeSelection();
     }
 
@@ -586,36 +601,54 @@ var setPointerHandlers = () => {
   });
 }
 
-function setDeleteMode(deleteMode) {
-  if (deleteMode == true && $("#delete_button").hasClass("disabled")) {
+function makeButtonSecondary(id) {
+  $(`#${id}`).removeClass('btn-primary');
+  $(`#${id}`).removeClass('active');
+  $(`#${id}`).addClass('btn-outline-secondary');
+}
+
+function makeButtonPrimary(id) {
+  $(`#${id}`).removeClass('btn-outline-secondary');
+  $(`#${id}`).addClass('btn-primary');
+}
+
+function setAnnotateMode(mode) {
+  if (mode === 'delete' && $("#delete_button").hasClass("disabled")) {
     return;
   }
-  if (typeof deleteMode !== 'boolean') {
-    deleteMode = deleteMode.target.id === 'delete_button';
-  }
+  editing_mode = mode;
 
-  delete_mode = deleteMode;
-  if (delete_mode == false) {
+  if (mode === 'annotate') {
     // annotate mode
+    console.log('updating buttons for annotate click');
     canvas.style.cursor = "none";
-    $("#delete_button").removeClass('btn-primary');
-    $("#delete_button").addClass('btn-outline-secondary');
+    makeButtonSecondary('delete_button');
+    makeButtonSecondary('erase_button');
 
-    $("#annotate_button").removeClass('btn-outline-secondary');
-    $("#annotate_button").addClass('btn-primary');
+    makeButtonPrimary('annotate_button');
     createBrush();
     updateGraphics();
-  } else {
+  } else if (mode === 'delete') {
     // delete mode
+    console.log('updating buttons for delete click');
     if (brush.path !== undefined) {
       brush.path.remove();
     }
     canvas.style.cursor = "pointer";
-    $("#annotate_button").removeClass('btn-primary');
-    $("#annotate_button").addClass('btn-outline-secondary');
+    makeButtonSecondary('annotate_button');
+    makeButtonSecondary('erase_button');
 
-    $("#delete_button").removeClass('btn-outline-secondary');
-    $("#delete_button").addClass('btn-primary');
+    makeButtonPrimary('delete_button');
+    updateGraphics();
+  } else if (mode === 'erase') {
+    // don't remove the brush path in this case, because
+    // the portions deleted will still be circular.
+    makeButtonSecondary('annotate_button');
+    makeButtonSecondary('delete_button');
+
+    makeButtonPrimary('erase_button');
+    canvas.style.cursor = 'none';
+    createBrush();
     updateGraphics();
   }
 }
@@ -640,6 +673,20 @@ var setDragHandler = () => {
   };
 }
 
+function performBrushAction(evt) {
+  if (pointerDown && !rightClick && !shiftKeyDown && !dragStart) {
+    moveBrush(evt);
+    if (editing_mode === 'annotate' && !blockEdit) {
+      draw();
+    } else if (editing_mode === 'erase') {
+
+      erase();
+    }
+  } else {
+    moveBrush(evt);
+  }
+}
+
 var setMouseMoveHandler = () => {
   paper.view.on('mousemove', function (evt) {
     if (window.blockPaperJsMouseEvents) {
@@ -652,20 +699,13 @@ var setMouseMoveHandler = () => {
       brush.path.opacity = 1.0;
     }
     document.activeElement.blur();
-    if (mode == 'brush' && !delete_mode) {
+    if (mode == 'brush' && editing_mode !== 'delete') {
       if (brush.path && !brush.path.isInside(backgroundRaster.bounds)) {
-        blockDraw = true;
+        blockEdit = true;
       } else {
-        blockDraw = false;
+        blockEdit = false;
       }
-      if (pointerDown && !rightClick && !shiftKeyDown && !dragStart) {
-        moveBrush(evt);
-        if (!blockDraw) {
-          draw();
-        }
-      } else {
-        moveBrush(evt);
-      }
+      performBrushAction(evt);
     }
   });
 }
@@ -679,10 +719,6 @@ var setResizeHandler = () => {
     setCanvasWidth();
     setCanvasHeight();
   }
-}
-
-function getDeleteMode() {
-  return delete_mode;
 }
 
 var moveBrush = function (evt) {
@@ -704,6 +740,12 @@ var removeSelection = function () {
     brushStroke.remove();
     brushStroke = null;
   }
+}
+
+function erase() {
+  let newSelection = brushStroke.subtract(brush.path);
+  brushStroke.remove();
+  brushStroke = newSelection;
 }
 
 var draw = function () {
@@ -1072,8 +1114,15 @@ var start = function () {
   $("#reposition_button").click(reposition);
   $("#view_button").click(toggleView);
   $("#mode_button").click(toggleMode);
-  $("#delete_button").click(setDeleteMode);
-  $("#annotate_button").click(setDeleteMode);
+  $("#delete_button").click(() => {
+    setAnnotateMode('delete');
+  });
+  $('#erase_button').click(() => {
+    setAnnotateMode('erase');
+  })
+  $("#annotate_button").click(() => {
+    setAnnotateMode('annotate');
+  });
   undoButton = document.getElementById('undo_button');
   undoButton.disabled = true;
 
