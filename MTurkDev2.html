@@ -582,8 +582,9 @@
 '            the egg centered (use Shift + Left mouse button to drag)' +
 '          </li>' +
 '          <li>' +
-'            Hover the cursor over an egg while holding the Shift key, and an outline should appear which shows the' +
-'            prediction made by the current version of the egg-counting model. Click inside the outline to start an' +
+'            Hover the cursor over an egg while holding the Ctrl key, and an outline should appear which shows the' +
+'            prediction' +
+'            made by the current version of the egg-counting model. Click inside the outline to start an' +
 '            annotation for it, which will appear as a polygon with a blue border and dots at its vertices, as shown.<br>' +
 '            <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/outline_to_annotation.gif">' +
 '          </li>' +
@@ -608,12 +609,13 @@
 '          <li>To confirm an annotation when you are finished, you can do either of the following:' +
 '            <ul>' +
 '              <li>' +
-'                start a new annotation, either by using Shift + Left mouse on an egg or by painting an annotation in a' +
+'                start a new annotation, either by using Ctrl + Left mouse on an egg or by painting an annotation in a' +
 '                non-overlapping location. This will automatically confirm your previous annotation.' +
 '              </li>' +
 '              <li>' +
 '                press Enter to manually confirm. This option can be useful for overlapping eggs&mdash;we need eggs' +
-'                annotated <strong>individually</strong> since our goal is to teach our model to count them.' +
+'                annotated' +
+'                <strong>individually</strong> since our goal is to teach our model to count them.' +
 '              </li>' +
 '            </ul>' +
 '          </li>' +
@@ -704,12 +706,12 @@
 '    </div>' +
 '    <table id="shortcuts-table">' +
 '      <tr>' +
-'        <td>Shift + hover</td>' +
+'        <td>Ctrl + hover</td>' +
 '        <td>Show predicted outline from egg-counting model</td>' +
 '      </tr>' +
 '      <tr>' +
 '        <td>' +
-'          Shift + Left click' +
+'          Ctrl + Left click' +
 '        </td>' +
 '        <td>' +
 '          Create annotation based on predicted outline' +
@@ -724,7 +726,7 @@
 '        <td>Erase from current (unconfirmed) annotation</td>' +
 '      </tr>' +
 '      <tr>' +
-'        <td>Shift + Left drag</td>' +
+'        <td>Shift + Left click</td>' +
 '        <td>Drag image</td>' +
 '      </tr>' +
 '      <tr>' +
@@ -761,9 +763,9 @@
 '    <span hidden id="outline-json-url"></span>' +
 '  </div>' +
 '</div>' +
-'<script id="turkey" type="text/javascript" src="https://egg-laying.s3.us-east-2.amazonaws.com/assets/bundleDev.min.js"></sc' +
+'<script id="turkey" type="text/javascript" src="https://egg-laying.s3.us-east-2.amazonaws.com/assets/bundleDev2.min.js"></sc' +
 'ript>' +
-'<script type="text/javascript" id="helpers" type="text/javascript" src="https://egg-laying.s3.us-east-2.amazonaws.com/assets/bundleHelpersDev.min.js">' +
+'<script type="text/javascript" id="helpers" type="text/javascript" src="https://egg-laying.s3.us-east-2.amazonaws.com/assets/bundleHelpersDev2.min.js">' +
 '  </sc' +
 'ript>' // endImportScript
     );

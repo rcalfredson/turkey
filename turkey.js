@@ -44,10 +44,11 @@ var mode = "";
 var modeNum = 0;
 var editing_mode = 'annotate';
 var timeDownUp = null;
-var shiftKeyDown = false;
-var altKeyDown = false;
+var shiftKeyUsedDuringAction = false;
+var keyDown = { shift: false, alt: false, ctrl: false };
 var rightClick = false;
 let lastScrollTime;
+let lastMousePosition;
 let brush = {
   pathOptions: {
     strokeColor: 'white',
@@ -64,6 +65,12 @@ let colors = {
 let history = [];
 window.gtClickData = null;
 window.gtClickPaths = [];
+let outlineData = [];
+let outlinePaths = [];
+let outlineIgnoreIndices = [];
+let outlineShownIndices = [];
+let previousOutlineIndex;
+let clickTimes = { up: null, down: null };
 let undoButton;
 let brushScaleFactor = 3;
 let outlineScaleFactor = 2;
@@ -146,6 +153,9 @@ var collectPointsOnCurve = function (path) {
 }
 
 var restorePriorUnitedAnnotation = function (priorBrushUnited) {
+  if (priorBrushUnited.outlineId !== undefined) {
+    removeItemOnce(outlineIgnoreIndices, priorBrushUnited.outlineId);
+  }
   if (priorBrushUnited.type == 'annotation') {
     priorBrushUnited.ids.forEach(id => {
       window.oldBrushes[id].brush.remove();
@@ -209,8 +219,11 @@ var setBrushAppearance = function (color = activeColor) {
   }
 }
 
-var updateCurrentAnnotation = function (newStroke, action) {
-  history.push({ type: 'stroke', brush: window.brushUnited, color: activeColor });
+var updateCurrentAnnotation = function (newStroke, action, outlineId = undefined) {
+  if ((window.brushUnited && window.brushUnited.outlineId !== undefined) || outlineId !== undefined) {
+    previousOutlineIndex = outlineId;
+  }
+  history.push({ type: 'stroke', brush: window.brushUnited, color: activeColor, outlineId });
   document.getElementById('undo_button').disabled = false;
   if (history.length > 10) {
     history.shift();
@@ -241,6 +254,7 @@ var updateCurrentAnnotation = function (newStroke, action) {
   }
   window.brushUnited = newCompound;
   window.brushUnited.selected = true;
+  window.brushUnited.outlineId = outlineId;
   pointsUnited = []
   if (window.brushUnited.children.length > 1 &&
     window.brushUnited.children[1].bounds.area >
@@ -292,9 +306,11 @@ var addHoverHandlers = function () {
       if (editing_mode === 'delete') {
         if (Object.keys(paperJstoTimeIds).includes(this.id.toString())) {
           window.oldBrushes[paperJstoTimeIds[this.id]].brush.remove();
+          removeItemOnce(outlineIgnoreIndices, window.oldBrushes[paperJstoTimeIds[this.id]].outlineId)
           delete window.oldBrushes[paperJstoTimeIds[this.id]];
           delete paperJstoTimeIds[this.id];
         } else {
+          removeItemOnce(outlineIgnoreIndices, previousOutlineIndex);
           window.brushUnited.remove();
           window.brushUnited = null;
         }
@@ -340,6 +356,12 @@ function toggleMode() {
   modeButton.value = 'Mode: ' + capitalize(mode);
 }
 
+window.addEventListener('blur', (evt) => {
+  if (keyDown.alt) {
+    keyDown.alt = false;
+  }
+})
+
 document.onkeydown = (e) => {
   var code = e.code;
   if (window.blockPaperJsKeyEvents) {
@@ -349,19 +371,60 @@ document.onkeydown = (e) => {
     undo();
   }
   if (e.key === 'Shift') {
-    shiftKeyDown = true;
+    if (keyDown.shift) {
+      return;
+    }
+    keyDown.shift = true;
+    updatePotentialEggOutline('show');
+    dragStart = true;
   }
   if (e.key === 'Alt') {
-    altKeyDown = true;
+    keyDown.alt = true;
+  }
+  if (e.key === 'Control') {
+    if (keyDown.ctrl) {
+      return;
+    }
+    keyDown.ctrl = true;
+    // updatePotentialEggOutline('show');
   }
 }
 
 document.onkeyup = (e) => {
   if (e.key === 'Shift') {
-    shiftKeyDown = false;
+    keyDown.shift = false;
+    updatePotentialEggOutline('hide');
+    dragStart = false;
   }
   if (e.key === 'Alt') {
-    altKeyDown = false;
+    keyDown.alt = false;
+  }
+  if (e.key === 'Control') {
+    keyDown.ctrl = false;
+    // updatePotentialEggOutline('hide');
+  }
+}
+
+function updatePotentialEggOutline(action) {
+  if (action === 'show') {
+    outlinePaths.some((eggOutline, i) => {
+      if (outlineIgnoreIndices.includes(i) || outlineShownIndices.length > 0 || outlineShownIndices.includes(i)) {
+        return false;
+      }
+      let containsEgg = eggOutline.contains(lastMousePosition);
+      if (containsEgg) {
+        outlineShownIndices.push(i);
+        revealSingleEggOutline(outlinePaths[i]);
+        return true;
+      }
+
+    });
+  } else if (action === 'hide') {
+    outlineShownIndices.forEach(i => {
+      hideSingleEggOutline(outlinePaths[i])
+    });
+    outlineShownIndices = [];
+    return true;
   }
 }
 
@@ -442,6 +505,7 @@ window.confirmDrawnShapes = () => {
       color: activeColor,
       brush: separatedBrushes[index],
       points: [pointsUnited[index]],
+      outlineId: window.brushUnited.outlineId,
       id: brushId,
       enclosedEgg: findEnclosedEgg(separatedBrushes[index]),
       finished: true
@@ -452,7 +516,13 @@ window.confirmDrawnShapes = () => {
   addHoverHandlers();
   window.brushUnited.remove();
   separatedBrushes = [];
-  history.push({ type: 'annotation', color: activeColor, ids: brushIds, brush: window.brushUnited });
+  history.push({
+    type: 'annotation',
+    color: activeColor,
+    ids: brushIds,
+    brush: window.brushUnited,
+    outlineId: window.brushUnited.outlineId
+  });
   activeColor = randomColor();
   window.brushUnited = null;
   refreshEggClickColors();
@@ -559,15 +629,27 @@ var setPointerHandlers = () => {
   window.addEventListener('pointerdown', function (evt) {
     rightClick = evt.which == 3;
   });
+
   paper.view.on('mousedown', function (evt) {
     if (window.blockPaperJsMouseEvents) {
       return;
     }
+    let currentTime = Date.now();
+    if (clickTimes.down === null || currentTime - clickTimes.down > 300) {
+      clickTimes.down = currentTime;
+      clickTimes.up = null;
+    } else if (currentTime - clickTimes.down < 300) {
+      clickTimes.down = currentTime;
+    }
     pointerDown = true;
-    if (editing_mode === 'annotate' && altKeyDown) {
+    if (keyDown.shift) {
+      transformOutlineToPath();
+      return;
+    }
+    if (editing_mode === 'annotate' && keyDown.alt) {
       editing_mode = 'erase';
     }
-    if (mode == 'brush' && editing_mode !== 'delete' && !rightClick && !shiftKeyDown) {
+    if (mode == 'brush' && editing_mode !== 'delete' && !rightClick && !keyDown.shift) {
       if (editing_mode === 'annotate') {
         if (brushStrokeStartPoint) brushStrokeStartPoint.remove();
         brushStrokeStartPoint = brush.path.clone();
@@ -587,14 +669,23 @@ var setPointerHandlers = () => {
       }
     }
     timeDownUp = new Date().getTime();
-    if (shiftKeyDown) {
+    if (keyDown.shift) {
       dragStart = true;
     }
   });
-  paper.view.on('mouseup', function () {
+  paper.view.on('mouseup', function (evt) {
     pointerDown = false;
     timeDownUp = new Date().getTime();
-    if (mode == 'brush' && editing_mode !== 'delete' && !rightClick && !shiftKeyDown) {
+    let currentTime = Date.now();
+    if (currentTime - clickTimes.down < 300) {
+      if (clickTimes.up === null) {
+        clickTimes.up = currentTime;
+      } else {
+        clickTimes.up = null
+        return;
+      }
+    }
+    if (mode == 'brush' && editing_mode !== 'delete' && !rightClick && !keyDown.shift) {
       let action;
       if (editing_mode === 'annotate') {
         action = 'unite';
@@ -604,14 +695,41 @@ var setPointerHandlers = () => {
       if (editing_mode === 'erase') {
         editing_mode = 'annotate';
       }
-      updateCurrentAnnotation(brushStroke, action);
-      removeSelection();
+      if (!keyDown.ctrl) {
+        updateCurrentAnnotation(brushStroke, action);
+        removeSelection();
+      }
     }
 
-    dragStart = false;
+    if (!keyDown.shift) {
+      dragStart = false;
+    }
+    shiftKeyUsedDuringAction = false;
     rightClick = false;
     updateGraphics();
   });
+}
+
+function removeItemOnce(arr, value) {
+  var index = arr.indexOf(value);
+  if (index > -1) {
+    arr.splice(index, 1);
+  }
+  return arr;
+}
+
+function transformOutlineToPath() {
+  console.log('trying to transform outline to path');
+  if (window.brushUnited) {
+    window.confirmDrawnShapes();
+  }
+  let indexToAdd = outlineShownIndices[0];
+  console.log(`index to add: ${indexToAdd}`);
+  if (indexToAdd === undefined) return;
+  outlineIgnoreIndices.push(indexToAdd);
+  removeItemOnce(outlineShownIndices, indexToAdd);
+  activeColor = outlinePaths[indexToAdd].strokeColor;
+  updateCurrentAnnotation(outlinePaths[indexToAdd], 'unite', indexToAdd);
 }
 
 function makeButtonSecondary(id) {
@@ -633,7 +751,6 @@ function setAnnotateMode(mode) {
 
   if (mode === 'annotate') {
     // annotate mode
-    console.log('updating buttons for annotate click');
     canvas.style.cursor = "none";
     makeButtonSecondary('delete_button');
 
@@ -642,7 +759,6 @@ function setAnnotateMode(mode) {
     updateGraphics();
   } else if (mode === 'delete') {
     // delete mode
-    console.log('updating buttons for delete click');
     if (brush.path !== undefined) {
       brush.path.remove();
     }
@@ -667,9 +783,10 @@ function setAnnotateMode(mode) {
 var setDragHandler = () => {
   var toolPan = new paper.Tool();
   toolPan.onMouseDrag = function (evt) {
-    if (!((shiftKeyDown || dragStart) && letPictureMove)) {
+    if (!((keyDown.shift || dragStart) && letPictureMove)) {
       return;
     }
+    shiftKeyUsedDuringAction = true;
     var timeMove = new Date().getTime();
     if (timeMove > timeDownUp) {
       if (dragStart) {
@@ -685,7 +802,8 @@ var setDragHandler = () => {
 }
 
 function performBrushAction(evt) {
-  if (pointerDown && !rightClick && !shiftKeyDown && !dragStart) {
+  if (pointerDown && !rightClick && !keyDown.ctrl &&
+    !keyDown.shift && !shiftKeyUsedDuringAction && !dragStart) {
     moveBrush(evt);
     if (editing_mode === 'annotate' && !blockEdit) {
       draw();
@@ -695,6 +813,10 @@ function performBrushAction(evt) {
     }
   } else {
     moveBrush(evt);
+    if (brushStroke) {
+      brushStroke.remove();
+      brushStroke = null;
+    }
   }
 }
 
@@ -710,6 +832,7 @@ var setMouseMoveHandler = () => {
       brush.path.opacity = 1.0;
     }
     document.activeElement.blur();
+    lastMousePosition = evt.point;
     if (mode == 'brush' && editing_mode !== 'delete') {
       if (brush.path && !brush.path.isInside(backgroundRaster.bounds)) {
         blockEdit = true;
@@ -754,6 +877,9 @@ var removeSelection = function () {
 }
 
 function erase() {
+  if (!brushStroke) {
+    return;
+  }
   let newSelection = brushStroke.subtract(brush.path);
   brushStroke.remove();
   brushStroke = newSelection;
@@ -809,20 +935,19 @@ var renderRaster = function () {
     0.5 * (paper.view.size.height - resizedHt));
 }
 
-var loadEggClicksData = function () {
+function loadEggData(dataType) {
   var urlAdded = false;
-  function checkForDataURL(urlAdded) {
+  function checkForDataUrl(urlAdded) {
     if (!urlAdded) {
       setTimeout(() => {
-        urlAdded = document.getElementById('click-json-url').innerText;
+        urlAdded = document.getElementById(`${dataType}-json-url`).innerText;
         if (urlAdded && urlAdded.includes('ground_truth')) {
-          fetchClickDataFromUrl(urlAdded);
+          fetchDataFromUrl(urlAdded, dataType);
         }
-        checkForDataURL(urlAdded);
-      }, 1000)
+      }, 1000);
     }
   }
-  checkForDataURL(urlAdded);
+  checkForDataUrl(urlAdded);
 }
 
 var drawEggClicksOnCanvas = function () {
@@ -838,6 +963,46 @@ var drawEggClicksOnCanvas = function () {
         visible: false
       })
     );
+  });
+}
+
+function revealSingleEggOutline(outlinePath) {
+  outlinePath.opacity = opacity_level;
+}
+
+function hideSingleEggOutline(outlinePath) {
+  outlinePath.opacity = 0;
+}
+
+function drawEggOutlinesOnCanvas() {
+  outlineData.forEach((eggOutline, i) => {
+    let segments = []
+    eggOutline.forEach(point => {
+      segments.push(new paper.Point(
+        backgroundRaster.scaling.x * (point[1]) + imageOffset.x,
+        backgroundRaster.scaling.y * (point[0]) + imageOffset.y
+      ));
+    });
+    let newPath = new paper.Path({ segments, closed: true, visible: true });
+    newPath.opacity = 0;
+    let transparency = '0' + Math.round(255 * 5 / 100).toString(16);
+    let newRandColor = randomColor();
+    let newRandColorWithAlpha = `${newRandColor}${transparency}`;
+    newPath.strokeColor = newRandColor;
+    newPath.fillColor = newRandColorWithAlpha;
+    newPath.onMouseEnter = function () {
+      if (!keyDown.shift || outlineIgnoreIndices.includes(i) || outlineShownIndices.length > 0 || outlineShownIndices.includes(i)) {
+        return;
+      }
+      outlineShownIndices.push(i);
+      revealSingleEggOutline(this);
+    }
+    newPath.onMouseLeave = function () {
+      removeItemOnce(outlineShownIndices, i);
+      this.opacity = 0;
+
+    }
+    outlinePaths.push(newPath);
   });
 }
 
@@ -884,22 +1049,26 @@ var toggleEggClickDisplay = function () {
   updateGraphics();
 }
 
-var fetchClickDataFromUrl = function (url) {
+var dataProcessors = {
+  click: function (data) {
+    window.gtClickData = JSON.parse(data);
+    document.getElementById('show_clicks_button').style.display = 'block';
+    drawEggClicksOnCanvas();
+  }, outline: function (data) {
+    outlineData = JSON.parse(data);
+    drawEggOutlinesOnCanvas();
+  }
+};
+
+function fetchDataFromUrl(url, dataType) {
   var request = new XMLHttpRequest();
   request.open('GET', url, true);
 
   request.onload = function () {
     if (request.status >= 200 && request.status < 400) {
-      // Success!
-      window.gtClickData = JSON.parse(request.responseText);
-      document.getElementById('show_clicks_button').style.display = 'block';
-      drawEggClicksOnCanvas();
-    } else {
-      // We reached our target server, but it returned an error
-
+      dataProcessors[dataType](request.responseText);
     }
   };
-
   request.send();
 }
 
@@ -912,7 +1081,9 @@ var setupCanvas = function () {
   setKeyboardHandlers();
   setDragHandler();
   setResizeHandler();
-  loadEggClicksData();
+  // loadEggClicksData();
+  loadEggData('click');
+  loadEggData('outline');
   backgroundRaster = new paper.Raster('pic');
   backgroundRaster.onLoad = () => {
     setCanvasWidth();
@@ -920,8 +1091,10 @@ var setupCanvas = function () {
     backgroundRaster.onMouseEnter = function () {
       letPictureMove = true;
     };
-    backgroundRaster.onMouseLeave = function () {
-      letPictureMove = false;
+    backgroundRaster.onMouseLeave = function (evt) {
+      if (!backgroundRaster.bounds.contains(evt.point)) {
+        letPictureMove = false;
+      }
     };
     renderRaster();
     origCenter = paper.view.center;

@@ -23,14 +23,17 @@ splitOutput.forEach((part, i) => {
         part = part.replace(/\'/g, '\\\'');
         scriptString += `'${part}' ${i + 1 == numParts ? '' : '+\n'}`
     }
-})
+});
+function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
 scriptString += '// endImportScript';
 parentHtml = parentHtml.replace(matches[0], matches[0].replace(/\/\/\simportScript(.|\n|\r)+\/\/\sendImportScript/g, scriptString));
-let isDev = process.argv.length > 2 && process.argv[2] == '--dev'
-let modifierString = isDev ? 'Dev' : '';
+let isDev = process.argv.length > 2 && process.argv[2].startsWith('--dev')
+let modifierString = isDev ? capitalize(process.argv[2].split('--')[1]) : '';
 if (isDev) {
-    parentHtml = parentHtml.replace(/bundle\.min\.js/g, 'bundleDev.min.js');
-    parentHtml = parentHtml.replace(/bundleHelpers\.min\.js/g, 'bundleHelpersDev.min.js');
+    parentHtml = parentHtml.replace(/bundle\.min\.js/g, `bundle${modifierString}.min.js`);
+    parentHtml = parentHtml.replace(/bundleHelpers\.min\.js/g, `bundleHelpers${modifierString}.min.js`);
 }
 let htmlOutFilename = `MTurk${modifierString}.html`
 fs.writeFile(htmlOutFilename, parentHtml, (err) => {

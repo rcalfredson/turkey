@@ -12,9 +12,10 @@ function capitalizeFirstLetter(string) {
 }
 
 let scriptName = process.argv[2];
-let isDev = process.argv.length > 3 && process.argv[3] == '--dev'
+let isDev = process.argv.length > 3 && process.argv[3].startsWith('--dev')
+let modifierString = isDev ? capitalizeFirstLetter(process.argv[3].split('--')[1]) : '';
 browserify(scriptName)
     .transform("babelify", { presets: ["@babel/preset-env"] })
     .bundle()
     .pipe(fs.createWriteStream(`bundle${capitalizeFirstLetter(path.basename(
-        scriptName).replace(/\.[^/.]+$/, ""))}${isDev ? 'Dev' : ''}.js`));
+        scriptName).replace(/\.[^/.]+$/, ""))}${modifierString}.js`));

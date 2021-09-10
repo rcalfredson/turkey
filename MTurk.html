@@ -579,31 +579,50 @@
 '        <ul>' +
 '          <li>' +
 '            Zoom in over an egg to make it relatively large (using the mouse wheel), possibly dragging the image to make' +
-'            the' +
-'            egg centered (use Shift + Left mouse button to drag)' +
+'            the egg centered (use Shift + Left mouse button to drag)' +
 '          </li>' +
 '          <li>' +
-'            Carefully move around the edge of the egg on the inside of the egg while holding the left mouse button to' +
-'            "paint" (annotate), aiming to match the egg border well' +
+'            Hover the cursor over an egg while holding the Shift key, and an outline should appear which shows the' +
+'            prediction made by the current version of the egg-counting model. Click inside the outline to start an' +
+'            annotation for it, which will appear as a polygon with a blue border and dots at its vertices, as shown.<br>' +
+'            <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/outline_to_annotation.gif">' +
+'          </li>' +
+'          <li>' +
+'            If the predicted outline is not precisely aligned with the borders of the egg, then use the left mouse' +
+'            button to "paint" (annotate) as needed. The brush radius can be adjusted with a slider.<br>' +
+'            <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/refining_annotation.gif">' +
+'          </li>' +
+'          <li>' +
+'            Here is an example with two annotated eggs, with annotation lines matching the egg borders well:<br>' +
+'            <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/segmentation.png">' +
+'          </li>' +
+'          <ul>' +
+'            <li>' +
+'              The annotation for the egg on the right is not confirmed yet and you can still add to it.' +
+'            </li>' +
+'          </ul>' +
+'          <li>' +
+'            Similarly, if the predicted outline extends beyond the border of the egg, or if you accidentally painted an' +
+'            area outside the egg, use Alt + Left mouse button to erase.' +
+'          </li>' +
+'          <li>To confirm an annotation when you are finished, you can do either of the following:' +
 '            <ul>' +
 '              <li>' +
-'                Here is an example with two annotated eggs, with annotation lines matching the egg borders well:<br>' +
-'                <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/segmentation.png">' +
+'                start a new annotation, either by using Shift + Left mouse on an egg or by painting an annotation in a' +
+'                non-overlapping location. This will automatically confirm your previous annotation.' +
 '              </li>' +
 '              <li>' +
-'                The annotation for the egg on the right is not confirmed yet and you can still add to it; the annotation' +
-'                will be automatically confirmed in case you start a new annotation in a non-overlapping location' +
-'              </li>' +
-'              <li>' +
-'                You can also manually confirm an annotation by pressing Enter, which can be useful for overlapping' +
-'                eggs&mdash;we need eggs annotated <strong>individually</strong> since our goal is to teach our model to' +
-'                count them' +
-'              </li>' +
-'              <li>' +
-'                Ctrl+Z can be used to undo recent paintings in case you painted an area outside the egg; also, the brush' +
-'                radius can be adjusted with a slider' +
+'                press Enter to manually confirm. This option can be useful for overlapping eggs&mdash;we need eggs' +
+'                annotated <strong>individually</strong> since our goal is to teach our model to count them.' +
 '              </li>' +
 '            </ul>' +
+'          </li>' +
+'          <li>' +
+'            If you find an egg without a predicted outline, these can be annotated as well: just annotate with the left' +
+'            mouse button, moving around the edge of the egg on the inside of the egg while holding the left mouse' +
+'            button, aiming to match the border well. When you release the mouse, the shape will be filled in, and you' +
+'            can then add to and erase from it as needed. <br>' +
+'            <img src="https://egg-laying.s3.us-east-2.amazonaws.com/examples/manual_annotation.gif">' +
 '          </li>' +
 '        </ul>' +
 '        <li>' +
@@ -685,16 +704,28 @@
 '    </div>' +
 '    <table id="shortcuts-table">' +
 '      <tr>' +
-'        <td>Left button</td>' +
+'        <td>Shift + hover</td>' +
+'        <td>Show predicted outline from egg-counting model</td>' +
+'      </tr>' +
+'      <tr>' +
+'        <td>' +
+'          Shift + Left click' +
+'        </td>' +
+'        <td>' +
+'          Create annotation based on predicted outline' +
+'        </td>' +
+'      </tr>' +
+'      <tr>' +
+'        <td>Left click</td>' +
 '        <td>Paint (annotate) while button held (in annotate mode)</td>' +
 '      </tr>' +
 '      <tr>' +
-'        <td>Shift + Left button</td>' +
-'        <td>Drag image</td>' +
+'        <td>Alt + Left click</td>' +
+'        <td>Erase from current (unconfirmed) annotation</td>' +
 '      </tr>' +
 '      <tr>' +
-'        <td>Alt + Left button</td>' +
-'        <td>Select area to erase from currently active egg</td>' +
+'        <td>Shift + Left drag</td>' +
+'        <td>Drag image</td>' +
 '      </tr>' +
 '      <tr>' +
 '        <td>Scroll wheel</td>' +

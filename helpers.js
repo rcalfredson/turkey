@@ -138,8 +138,10 @@ function checkForClickDisagreement() {
 var s3Split = document.getElementById('pic').getAttribute('src').split("s3://");
 var imagesSplit = s3Split[s3Split.length - 1].split("egg-laying/images/");
 var extensionSplit = imagesSplit[imagesSplit.length - 1].replace(/\.[^/.]+$/, "");
-var click_data_url = `https://egg-laying.s3.us-east-2.amazonaws.com/ground_truth_clicks/${extensionSplit}_clicks.json`;
-document.getElementById("click-json-url").innerText = click_data_url;
+['clicks', 'outlines'].forEach((dataType) => {
+    let data_url = `https://egg-laying.s3.us-east-2.amazonaws.com/ground_truth_${dataType}/${extensionSplit}_${dataType}.json`;
+    document.getElementById(`${dataType.slice(0, dataType.length - 1)}-json-url`).innerText = data_url;
+});
 let submitButtons = document.getElementsByClassName('submit-from-modal');
   for (let index = 0; index < submitButtons.length; index++) {
     submitButtons[index].onclick = () => {
